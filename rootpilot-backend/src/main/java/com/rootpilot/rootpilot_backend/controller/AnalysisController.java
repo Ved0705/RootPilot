@@ -49,4 +49,9 @@ public class AnalysisController {
 
         return incidentService.getExceptionRanking();
     }
+    @GetMapping("/root-cause-candidates")
+    public Map<String, Object> getRootCauseCandidates() {
+
+        return incidentService.getRootCauseCandidates();
+    }
 }

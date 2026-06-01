@@ -219,4 +219,25 @@ public class IncidentService {
                 })
                 .toList();
     }
+    public Map<String, Object> getRootCauseCandidates() {
+
+        Map<String, Object> topService =
+                getTopFailingService();
+
+        Map<String, Object> topException =
+                getTopException();
+
+        return Map.of(
+                "topService",
+                topService.get("service"),
+
+                "topException",
+                topException.get("exception"),
+
+                "probableRootCause",
+                topException.get("exception")
+                        + " in "
+                        + topService.get("service")
+        );
+    }
 }
