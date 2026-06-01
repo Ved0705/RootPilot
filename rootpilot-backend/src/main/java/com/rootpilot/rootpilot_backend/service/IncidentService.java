@@ -647,7 +647,19 @@ public class IncidentService {
 
         return correlations.get(0);
     }
+    @SuppressWarnings("unchecked")
     public Map<String, Object> getRecentRcaSummary() {
+
+        String cacheKey = "recentRcaSummary";
+
+        Object cached =
+                redisTemplate.opsForValue()
+                        .get(cacheKey);
+
+        if (cached != null) {
+
+            return (Map<String, Object>) cached;
+        }
 
         Map<String, Long> recentIncidents =
                 getRecentIncidentCount();
@@ -698,6 +710,9 @@ public class IncidentService {
                         + " in "
                         + topCorrelation.get("service")
         );
+
+        redisTemplate.opsForValue()
+                .set(cacheKey, summary);
 
         return summary;
     }
