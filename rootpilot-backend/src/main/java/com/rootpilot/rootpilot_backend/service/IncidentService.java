@@ -1,12 +1,10 @@
 package com.rootpilot.rootpilot_backend.service;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.repository.IncidentRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -239,5 +237,38 @@ public class IncidentService {
                         + " in "
                         + topService.get("service")
         );
+    }
+    public List<Map<String, Object>> getCorrelations() {
+
+        List<Object[]> results =
+                incidentRepository.countServiceExceptionCorrelations();
+
+        List<Map<String, Object>> correlations =
+                new ArrayList<>();
+
+        for (Object[] row : results) {
+
+            Map<String, Object> correlation =
+                    new HashMap<>();
+
+            correlation.put(
+                    "service",
+                    row[0]
+            );
+
+            correlation.put(
+                    "exception",
+                    row[1]
+            );
+
+            correlation.put(
+                    "incidentCount",
+                    row[2]
+            );
+
+            correlations.add(correlation);
+        }
+
+        return correlations;
     }
 }

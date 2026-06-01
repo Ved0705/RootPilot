@@ -32,4 +32,14 @@ public interface IncidentRepository
        GROUP BY i.serviceName
        """)
     List<Object[]> countIncidentsByService();
+    @Query("""
+       SELECT i.serviceName,
+              i.exceptionType,
+              COUNT(i)
+       FROM Incident i
+       GROUP BY i.serviceName,
+                i.exceptionType
+       ORDER BY COUNT(i) DESC
+       """)
+    List<Object[]> countServiceExceptionCorrelations();
 }

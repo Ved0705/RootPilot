@@ -54,4 +54,9 @@ public class AnalysisController {
 
         return incidentService.getRootCauseCandidates();
     }
+    @GetMapping("/correlations")
+    public List<Map<String, Object>> getCorrelations() {
+
+        return incidentService.getCorrelations();
+    }
 }
