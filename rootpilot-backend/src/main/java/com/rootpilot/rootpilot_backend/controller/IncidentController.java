@@ -36,4 +36,9 @@ public class IncidentController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    @GetMapping("/services")
+    public List<String> getServices() {
+
+        return incidentService.getAllServices();
+    }
 }

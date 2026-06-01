@@ -25,4 +25,14 @@ public class MetricsController {
                 incidentService.getTotalIncidents()
         );
     }
+    @GetMapping("/metrics/exceptions")
+    public Map<String, Long> getExceptionMetrics() {
+
+        return incidentService.getExceptionMetrics();
+    }
+    @GetMapping("/metrics/services")
+    public Map<String, Long> getServiceMetrics() {
+
+        return incidentService.getServiceMetrics();
+    }
 }
