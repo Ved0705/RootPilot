@@ -57,4 +57,15 @@ public interface IncidentRepository
        ORDER BY FUNCTION('DATE_TRUNC', 'hour', i.timestamp)
        """)
     List<Object[]> getHourlyTrend();
+    @Query("""
+       SELECT i.serviceName,
+              COUNT(i)
+       FROM Incident i
+       WHERE i.timestamp >= :since
+       GROUP BY i.serviceName
+       ORDER BY COUNT(i) DESC
+       """)
+    List<Object[]> countRecentIncidentsByService(
+            LocalDateTime since
+    );
 }

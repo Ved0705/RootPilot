@@ -435,4 +435,28 @@ public class IncidentService {
 
         return result;
     }
+    public Map<String, Object> getRecentTopService() {
+
+        LocalDateTime since =
+                LocalDateTime.now().minusHours(1);
+
+        List<Object[]> results =
+                incidentRepository
+                        .countRecentIncidentsByService(
+                                since
+                        );
+
+        if (results.isEmpty()) {
+            return Map.of();
+        }
+
+        Object[] row = results.get(0);
+
+        return Map.of(
+                "service",
+                row[0],
+                "incidentCount",
+                row[1]
+        );
+    }
 }

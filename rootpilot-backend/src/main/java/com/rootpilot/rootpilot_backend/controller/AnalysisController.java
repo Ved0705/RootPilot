@@ -85,4 +85,9 @@ public class AnalysisController {
 
         return incidentService.detectSpike();
     }
+    @GetMapping("/recent-top-service")
+    public Map<String, Object> getRecentTopService() {
+
+        return incidentService.getRecentTopService();
+    }
 }
