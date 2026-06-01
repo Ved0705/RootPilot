@@ -1,6 +1,7 @@
 package com.rootpilot.rootpilot_backend.controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import java.util.Optional;
+import org.springframework.http.ResponseEntity;
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.service.IncidentService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,9 +28,12 @@ public class IncidentController {
         return incidentService.getAllIncidents();
     }
     @GetMapping("/{id}")
-    public Optional<Incident> getIncidentById(
+    public ResponseEntity<Incident> getIncidentById(
             @PathVariable Long id) {
 
-        return incidentService.getIncidentById(id);
+        return incidentService
+                .getIncidentById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
