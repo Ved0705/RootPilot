@@ -459,4 +459,28 @@ public class IncidentService {
                 row[1]
         );
     }
+    public Map<String, Object> getRecentTopException() {
+
+        LocalDateTime since =
+                LocalDateTime.now().minusHours(1);
+
+        List<Object[]> results =
+                incidentRepository
+                        .countRecentIncidentsByException(
+                                since
+                        );
+
+        if (results.isEmpty()) {
+            return Map.of();
+        }
+
+        Object[] row = results.get(0);
+
+        return Map.of(
+                "exception",
+                row[0],
+                "incidentCount",
+                row[1]
+        );
+    }
 }

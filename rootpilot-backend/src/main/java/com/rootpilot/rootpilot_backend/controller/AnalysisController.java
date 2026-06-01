@@ -90,4 +90,9 @@ public class AnalysisController {
 
         return incidentService.getRecentTopService();
     }
+    @GetMapping("/recent-top-exception")
+    public Map<String, Object> getRecentTopException() {
+
+        return incidentService.getRecentTopException();
+    }
 }
