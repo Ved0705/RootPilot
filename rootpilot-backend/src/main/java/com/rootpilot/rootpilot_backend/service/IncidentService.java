@@ -27,9 +27,8 @@ public class IncidentService {
         Incident saved =
                 incidentRepository.save(incident);
 
-        redisTemplate.delete(
-                "totalIncidents"
-        );
+        redisTemplate.delete("totalIncidents");
+        redisTemplate.delete("serviceMetrics");
 
         return saved;
     }
@@ -88,12 +87,25 @@ public class IncidentService {
 
         return metrics;
     }
+    @SuppressWarnings("unchecked")
     public Map<String, Long> getServiceMetrics() {
+
+        String cacheKey = "serviceMetrics";
+
+        Object cached =
+                redisTemplate.opsForValue()
+                        .get(cacheKey);
+
+        if (cached != null) {
+
+            return (Map<String, Long>) cached;
+        }
 
         List<Object[]> results =
                 incidentRepository.countIncidentsByService();
 
-        Map<String, Long> metrics = new HashMap<>();
+        Map<String, Long> metrics =
+                new HashMap<>();
 
         for (Object[] row : results) {
 
@@ -102,6 +114,9 @@ public class IncidentService {
                     (Long) row[1]
             );
         }
+
+        redisTemplate.opsForValue()
+                .set(cacheKey, metrics);
 
         return metrics;
     }
