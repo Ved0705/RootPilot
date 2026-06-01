@@ -282,4 +282,47 @@ public class IncidentService {
 
         return correlations.get(0);
     }
+    public Map<String, Object> getRcaSummary() {
+
+        Map<String, Object> summary =
+                new HashMap<>();
+
+        Map<String, Object> topService =
+                getTopFailingService();
+
+        Map<String, Object> topException =
+                getTopException();
+
+        Map<String, Object> topCorrelation =
+                getTopCorrelation();
+
+        summary.put(
+                "totalIncidents",
+                getTotalIncidents()
+        );
+
+        summary.put(
+                "topService",
+                topService.get("service")
+        );
+
+        summary.put(
+                "topException",
+                topException.get("exception")
+        );
+
+        summary.put(
+                "topCorrelation",
+                topCorrelation
+        );
+
+        summary.put(
+                "probableRootCause",
+                topCorrelation.get("exception")
+                        + " in "
+                        + topCorrelation.get("service")
+        );
+
+        return summary;
+    }
 }
