@@ -70,4 +70,14 @@ public class AnalysisController {
 
         return incidentService.getRcaSummary();
     }
+    @GetMapping("/recent-incidents")
+    public Map<String, Long> getRecentIncidents() {
+
+        return incidentService.getRecentIncidentCount();
+    }
+    @GetMapping("/hourly-trend")
+    public List<Map<String, Object>> getHourlyTrend() {
+
+        return incidentService.getHourlyTrend();
+    }
 }

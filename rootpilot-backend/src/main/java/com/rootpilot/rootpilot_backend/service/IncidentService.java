@@ -1,4 +1,5 @@
 package com.rootpilot.rootpilot_backend.service;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import com.rootpilot.rootpilot_backend.entity.Incident;
@@ -324,5 +325,48 @@ public class IncidentService {
         );
 
         return summary;
+    }
+    public Map<String, Long> getRecentIncidentCount() {
+
+        LocalDateTime since =
+                LocalDateTime.now().minusHours(1);
+
+        long count =
+                incidentRepository.countRecentIncidents(
+                        since
+                );
+
+        return Map.of(
+                "recentIncidents",
+                count
+        );
+    }
+    public List<Map<String, Object>> getHourlyTrend() {
+
+        List<Object[]> results =
+                incidentRepository.getHourlyTrend();
+
+        List<Map<String, Object>> trend =
+                new ArrayList<>();
+
+        for (Object[] row : results) {
+
+            Map<String, Object> point =
+                    new HashMap<>();
+
+            point.put(
+                    "hour",
+                    row[0].toString()
+            );
+
+            point.put(
+                    "count",
+                    row[1]
+            );
+
+            trend.add(point);
+        }
+
+        return trend;
     }
 }

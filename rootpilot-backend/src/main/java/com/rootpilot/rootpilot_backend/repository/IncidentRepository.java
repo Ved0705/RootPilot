@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -42,4 +43,18 @@ public interface IncidentRepository
        ORDER BY COUNT(i) DESC
        """)
     List<Object[]> countServiceExceptionCorrelations();
+    @Query("""
+       SELECT COUNT(i)
+       FROM Incident i
+       WHERE i.timestamp >= :since
+       """)
+    long countRecentIncidents(LocalDateTime since);
+    @Query("""
+       SELECT FUNCTION('DATE_TRUNC', 'hour', i.timestamp),
+              COUNT(i)
+       FROM Incident i
+       GROUP BY FUNCTION('DATE_TRUNC', 'hour', i.timestamp)
+       ORDER BY FUNCTION('DATE_TRUNC', 'hour', i.timestamp)
+       """)
+    List<Object[]> getHourlyTrend();
 }
