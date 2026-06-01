@@ -95,4 +95,29 @@ public class AnalysisController {
 
         return incidentService.getRecentTopException();
     }
+    @GetMapping("/trend-summary")
+    public Map<String, Object> getTrendSummary() {
+
+        return incidentService.getTrendSummary();
+    }
+    @GetMapping("/recent-correlations")
+    public List<Map<String, Object>> getRecentCorrelations() {
+
+        return incidentService.getRecentCorrelations();
+    }
+    @GetMapping("/recent-top-correlation")
+    public Map<String, Object> getRecentTopCorrelation() {
+
+        return incidentService.getRecentTopCorrelation();
+    }
+    @GetMapping("/recent-rca-summary")
+    public Map<String, Object> getRecentRcaSummary() {
+
+        return incidentService.getRecentRcaSummary();
+    }
+    @GetMapping("/severity")
+    public Map<String, Object> getSeverityAnalysis() {
+
+        return incidentService.getSeverityAnalysis();
+    }
 }

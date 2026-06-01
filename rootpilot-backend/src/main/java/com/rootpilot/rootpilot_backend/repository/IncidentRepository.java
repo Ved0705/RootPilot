@@ -79,4 +79,17 @@ public interface IncidentRepository
     List<Object[]> countRecentIncidentsByException(
             LocalDateTime since
     );
+    @Query("""
+       SELECT i.serviceName,
+              i.exceptionType,
+              COUNT(i)
+       FROM Incident i
+       WHERE i.timestamp >= :since
+       GROUP BY i.serviceName,
+                i.exceptionType
+       ORDER BY COUNT(i) DESC
+       """)
+    List<Object[]> countRecentCorrelations(
+            LocalDateTime since
+    );
 }

@@ -483,4 +483,197 @@ public class IncidentService {
                 row[1]
         );
     }
+    public Map<String, Object> getTrendSummary() {
+
+        Map<String, Long> recentIncidents =
+                getRecentIncidentCount();
+
+        Map<String, Object> spike =
+                detectSpike();
+
+        Map<String, Object> recentService =
+                getRecentTopService();
+
+        Map<String, Object> recentException =
+                getRecentTopException();
+
+        Map<String, Object> summary =
+                new HashMap<>();
+
+        summary.put(
+                "recentIncidents",
+                recentIncidents.get("recentIncidents")
+        );
+
+        summary.put(
+                "spikeDetected",
+                spike.get("spikeDetected")
+        );
+
+        summary.put(
+                "topRecentService",
+                recentService.get("service")
+        );
+
+        summary.put(
+                "topRecentException",
+                recentException.get("exception")
+        );
+
+        return summary;
+    }
+    public List<Map<String, Object>> getRecentCorrelations() {
+
+        LocalDateTime since =
+                LocalDateTime.now().minusHours(1);
+
+        List<Object[]> results =
+                incidentRepository.countRecentCorrelations(
+                        since
+                );
+
+        List<Map<String, Object>> correlations =
+                new ArrayList<>();
+
+        for (Object[] row : results) {
+
+            Map<String, Object> correlation =
+                    new HashMap<>();
+
+            correlation.put(
+                    "service",
+                    row[0]
+            );
+
+            correlation.put(
+                    "exception",
+                    row[1]
+            );
+
+            correlation.put(
+                    "incidentCount",
+                    row[2]
+            );
+
+            correlations.add(correlation);
+        }
+
+        return correlations;
+    }
+    public Map<String, Object> getRecentTopCorrelation() {
+
+        List<Map<String, Object>> correlations =
+                getRecentCorrelations();
+
+        if (correlations.isEmpty()) {
+            return Map.of();
+        }
+
+        return correlations.get(0);
+    }
+    public Map<String, Object> getRecentRcaSummary() {
+
+        Map<String, Long> recentIncidents =
+                getRecentIncidentCount();
+
+        Map<String, Object> spike =
+                detectSpike();
+
+        Map<String, Object> topService =
+                getRecentTopService();
+
+        Map<String, Object> topException =
+                getRecentTopException();
+
+        Map<String, Object> topCorrelation =
+                getRecentTopCorrelation();
+
+        Map<String, Object> summary =
+                new HashMap<>();
+
+        summary.put(
+                "recentIncidents",
+                recentIncidents.get("recentIncidents")
+        );
+
+        summary.put(
+                "spikeDetected",
+                spike.get("spikeDetected")
+        );
+
+        summary.put(
+                "topService",
+                topService.get("service")
+        );
+
+        summary.put(
+                "topException",
+                topException.get("exception")
+        );
+
+        summary.put(
+                "topCorrelation",
+                topCorrelation
+        );
+
+        summary.put(
+                "probableRootCause",
+                topCorrelation.get("exception")
+                        + " in "
+                        + topCorrelation.get("service")
+        );
+
+        return summary;
+    }
+    public Map<String, Object> getSeverityAnalysis() {
+
+        Map<String, Long> recentIncidents =
+                getRecentIncidentCount();
+
+        Map<String, Object> spike =
+                detectSpike();
+
+        long incidentCount =
+                recentIncidents.get("recentIncidents");
+
+        boolean spikeDetected =
+                Boolean.TRUE.equals(
+                        spike.get("spikeDetected")
+                );
+
+        String severity;
+
+        if (spikeDetected || incidentCount > 25) {
+
+            severity = "HIGH";
+
+        } else if (incidentCount > 10) {
+
+            severity = "MEDIUM";
+
+        } else {
+
+            severity = "LOW";
+        }
+
+        Map<String, Object> result =
+                new HashMap<>();
+
+        result.put(
+                "severity",
+                severity
+        );
+
+        result.put(
+                "recentIncidents",
+                incidentCount
+        );
+
+        result.put(
+                "spikeDetected",
+                spikeDetected
+        );
+
+        return result;
+    }
 }
