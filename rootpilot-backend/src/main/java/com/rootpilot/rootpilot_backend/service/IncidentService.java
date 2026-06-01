@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class IncidentService {
@@ -76,5 +77,14 @@ public class IncidentService {
         }
 
         return metrics;
+    }
+    public Map<String, Long> getExceptionCounts() {
+
+        return incidentRepository.findAll()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        Incident::getExceptionType,
+                        Collectors.counting()
+                ));
     }
 }
