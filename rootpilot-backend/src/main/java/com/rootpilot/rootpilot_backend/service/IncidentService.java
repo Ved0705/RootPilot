@@ -106,4 +106,23 @@ public class IncidentService {
                 "incidentCount", topService.getValue()
         );
     }
+    public Map<String, Object> getTopException() {
+
+        Map<String, Long> metrics = getExceptionMetrics();
+
+        Map.Entry<String, Long> topException =
+                metrics.entrySet()
+                        .stream()
+                        .max(Map.Entry.comparingByValue())
+                        .orElse(null);
+
+        if (topException == null) {
+            return Map.of();
+        }
+
+        return Map.of(
+                "exception", topException.getKey(),
+                "incidentCount", topException.getValue()
+        );
+    }
 }

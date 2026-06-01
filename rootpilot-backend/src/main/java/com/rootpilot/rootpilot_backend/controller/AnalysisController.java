@@ -28,4 +28,9 @@ public class AnalysisController {
 
         return incidentService.getTopFailingService();
     }
+    @GetMapping("/top-exception")
+    public Map<String, Object> getTopException() {
+
+        return incidentService.getTopException();
+    }
 }
