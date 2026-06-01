@@ -29,6 +29,7 @@ public class IncidentService {
 
         redisTemplate.delete("totalIncidents");
         redisTemplate.delete("serviceMetrics");
+        redisTemplate.delete("exceptionMetrics");
 
         return saved;
     }
@@ -70,12 +71,25 @@ public class IncidentService {
 
         return incidentRepository.findDistinctServiceNames();
     }
+    @SuppressWarnings("unchecked")
     public Map<String, Long> getExceptionMetrics() {
+
+        String cacheKey = "exceptionMetrics";
+
+        Object cached =
+                redisTemplate.opsForValue()
+                        .get(cacheKey);
+
+        if (cached != null) {
+
+            return (Map<String, Long>) cached;
+        }
 
         List<Object[]> results =
                 incidentRepository.countIncidentsByException();
 
-        Map<String, Long> metrics = new HashMap<>();
+        Map<String, Long> metrics =
+                new HashMap<>();
 
         for (Object[] row : results) {
 
@@ -84,6 +98,9 @@ public class IncidentService {
                     (Long) row[1]
             );
         }
+
+        redisTemplate.opsForValue()
+                .set(cacheKey, metrics);
 
         return metrics;
     }
