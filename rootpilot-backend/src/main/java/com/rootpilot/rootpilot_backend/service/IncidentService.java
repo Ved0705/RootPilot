@@ -125,4 +125,42 @@ public class IncidentService {
                 "incidentCount", topException.getValue()
         );
     }
+    public Map<String, Object> getAnalysisSummary() {
+
+        Map<String, Object> topService =
+                getTopFailingService();
+
+        Map<String, Object> topException =
+                getTopException();
+
+        Map<String, Object> summary =
+                new HashMap<>();
+
+        summary.put(
+                "totalIncidents",
+                getTotalIncidents()
+        );
+
+        summary.put(
+                "topService",
+                topService.get("service")
+        );
+
+        summary.put(
+                "topServiceIncidentCount",
+                topService.get("incidentCount")
+        );
+
+        summary.put(
+                "topException",
+                topException.get("exception")
+        );
+
+        summary.put(
+                "topExceptionIncidentCount",
+                topException.get("incidentCount")
+        );
+
+        return summary;
+    }
 }

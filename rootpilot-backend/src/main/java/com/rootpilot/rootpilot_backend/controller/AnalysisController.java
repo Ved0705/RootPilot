@@ -33,4 +33,9 @@ public class AnalysisController {
 
         return incidentService.getTopException();
     }
+    @GetMapping("/summary")
+    public Map<String, Object> getSummary() {
+
+        return incidentService.getAnalysisSummary();
+    }
 }
