@@ -30,6 +30,7 @@ public class IncidentService {
         redisTemplate.delete("totalIncidents");
         redisTemplate.delete("serviceMetrics");
         redisTemplate.delete("exceptionMetrics");
+        redisTemplate.delete("rcaSummary");
 
         return saved;
     }
@@ -343,7 +344,19 @@ public class IncidentService {
 
         return correlations.get(0);
     }
+    @SuppressWarnings("unchecked")
     public Map<String, Object> getRcaSummary() {
+
+        String cacheKey = "rcaSummary";
+
+        Object cached =
+                redisTemplate.opsForValue()
+                        .get(cacheKey);
+
+        if (cached != null) {
+
+            return (Map<String, Object>) cached;
+        }
 
         Map<String, Object> summary =
                 new HashMap<>();
@@ -383,6 +396,9 @@ public class IncidentService {
                         + " in "
                         + topCorrelation.get("service")
         );
+
+        redisTemplate.opsForValue()
+                .set(cacheKey, summary);
 
         return summary;
     }
