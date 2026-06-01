@@ -271,4 +271,15 @@ public class IncidentService {
 
         return correlations;
     }
+    public Map<String, Object> getTopCorrelation() {
+
+        List<Map<String, Object>> correlations =
+                getCorrelations();
+
+        if (correlations.isEmpty()) {
+            return Map.of();
+        }
+
+        return correlations.get(0);
+    }
 }

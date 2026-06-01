@@ -59,4 +59,10 @@ public class AnalysisController {
 
         return incidentService.getCorrelations();
     }
+    
+    @GetMapping("/top-correlation")
+    public Map<String, Object> getTopCorrelation() {
+
+        return incidentService.getTopCorrelation();
+    }
 }
