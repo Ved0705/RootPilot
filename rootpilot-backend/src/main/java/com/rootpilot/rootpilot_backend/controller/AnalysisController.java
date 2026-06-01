@@ -80,4 +80,9 @@ public class AnalysisController {
 
         return incidentService.getHourlyTrend();
     }
+    @GetMapping("/spike-detection")
+    public Map<String, Object> detectSpike() {
+
+        return incidentService.detectSpike();
+    }
 }

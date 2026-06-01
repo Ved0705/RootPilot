@@ -369,4 +369,70 @@ public class IncidentService {
 
         return trend;
     }
+    public Map<String, Object> detectSpike() {
+
+        List<Map<String, Object>> trend =
+                getHourlyTrend();
+
+        if (trend.size() < 2) {
+
+            return Map.of(
+                    "message",
+                    "Not enough data for spike detection"
+            );
+        }
+
+        Map<String, Object> previous =
+                trend.get(trend.size() - 2);
+
+        Map<String, Object> current =
+                trend.get(trend.size() - 1);
+
+        long previousCount =
+                ((Number) previous.get("count"))
+                        .longValue();
+
+        long currentCount =
+                ((Number) current.get("count"))
+                        .longValue();
+
+        double increasePercent = 0;
+
+        if (previousCount > 0) {
+
+            increasePercent =
+                    ((double)
+                            (currentCount - previousCount)
+                            / previousCount)
+                            * 100;
+        }
+
+        boolean spikeDetected =
+                increasePercent > 50;
+
+        Map<String, Object> result =
+                new HashMap<>();
+
+        result.put(
+                "currentHourIncidents",
+                currentCount
+        );
+
+        result.put(
+                "previousHourIncidents",
+                previousCount
+        );
+
+        result.put(
+                "increasePercent",
+                Math.round(increasePercent * 100.0) / 100.0
+        );
+
+        result.put(
+                "spikeDetected",
+                spikeDetected
+        );
+
+        return result;
+    }
 }
