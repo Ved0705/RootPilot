@@ -163,4 +163,32 @@ public class IncidentService {
 
         return summary;
     }
+    public List<Map<String, Object>> getServiceRanking() {
+
+        return getServiceMetrics()
+                .entrySet()
+                .stream()
+                .sorted(
+                        Map.Entry.<String, Long>comparingByValue()
+                                .reversed()
+                )
+                .map(entry -> {
+
+                    Map<String, Object> service =
+                            new HashMap<>();
+
+                    service.put(
+                            "service",
+                            entry.getKey()
+                    );
+
+                    service.put(
+                            "incidentCount",
+                            entry.getValue()
+                    );
+
+                    return service;
+                })
+                .toList();
+    }
 }
