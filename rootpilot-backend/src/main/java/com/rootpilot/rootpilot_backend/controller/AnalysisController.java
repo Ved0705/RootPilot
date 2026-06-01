@@ -44,4 +44,9 @@ public class AnalysisController {
 
         return incidentService.getServiceRanking();
     }
+    @GetMapping("/exception-ranking")
+    public List<Map<String, Object>> getExceptionRanking() {
+
+        return incidentService.getExceptionRanking();
+    }
 }

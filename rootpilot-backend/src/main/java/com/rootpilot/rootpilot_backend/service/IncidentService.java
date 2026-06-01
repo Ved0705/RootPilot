@@ -191,4 +191,32 @@ public class IncidentService {
                 })
                 .toList();
     }
+    public List<Map<String, Object>> getExceptionRanking() {
+
+        return getExceptionMetrics()
+                .entrySet()
+                .stream()
+                .sorted(
+                        Map.Entry.<String, Long>comparingByValue()
+                                .reversed()
+                )
+                .map(entry -> {
+
+                    Map<String, Object> exception =
+                            new HashMap<>();
+
+                    exception.put(
+                            "exception",
+                            entry.getKey()
+                    );
+
+                    exception.put(
+                            "incidentCount",
+                            entry.getValue()
+                    );
+
+                    return exception;
+                })
+                .toList();
+    }
 }
