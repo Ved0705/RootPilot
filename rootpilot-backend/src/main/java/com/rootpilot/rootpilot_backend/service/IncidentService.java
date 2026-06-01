@@ -1,7 +1,7 @@
 package com.rootpilot.rootpilot_backend.service;
 import java.time.LocalDateTime;
 import java.util.*;
-
+import org.springframework.data.redis.core.RedisTemplate;
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.repository.IncidentRepository;
 import org.springframework.stereotype.Service;
@@ -14,15 +14,24 @@ public class IncidentService {
     private final IncidentRepository incidentRepository;
 
     public IncidentService(
-            IncidentRepository incidentRepository) {
+            IncidentRepository incidentRepository,
+            RedisTemplate<String, Object> redisTemplate) {
 
         this.incidentRepository = incidentRepository;
+        this.redisTemplate = redisTemplate;
     }
 
     public Incident saveIncident(
             Incident incident) {
 
-        return incidentRepository.save(incident);
+        Incident saved =
+                incidentRepository.save(incident);
+
+        redisTemplate.delete(
+                "totalIncidents"
+        );
+
+        return saved;
     }
 
     public List<Incident> getAllIncidents() {
@@ -37,7 +46,26 @@ public class IncidentService {
     }
     public long getTotalIncidents() {
 
-        return incidentRepository.count();
+        String cacheKey = "totalIncidents";
+
+        Object cachedValue =
+                redisTemplate.opsForValue()
+                        .get(cacheKey);
+
+        if (cachedValue != null) {
+
+            return Long.parseLong(
+                    cachedValue.toString()
+            );
+        }
+
+        long count =
+                incidentRepository.count();
+
+        redisTemplate.opsForValue()
+                .set(cacheKey, count);
+
+        return count;
     }
     public List<String> getAllServices() {
 
@@ -676,4 +704,5 @@ public class IncidentService {
 
         return result;
     }
+    private final RedisTemplate<String, Object> redisTemplate;
 }
