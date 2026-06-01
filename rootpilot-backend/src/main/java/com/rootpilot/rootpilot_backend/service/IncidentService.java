@@ -87,4 +87,23 @@ public class IncidentService {
                         Collectors.counting()
                 ));
     }
+    public Map<String, Object> getTopFailingService() {
+
+        Map<String, Long> metrics = getServiceMetrics();
+
+        Map.Entry<String, Long> topService =
+                metrics.entrySet()
+                        .stream()
+                        .max(Map.Entry.comparingByValue())
+                        .orElse(null);
+
+        if (topService == null) {
+            return Map.of();
+        }
+
+        return Map.of(
+                "service", topService.getKey(),
+                "incidentCount", topService.getValue()
+        );
+    }
 }

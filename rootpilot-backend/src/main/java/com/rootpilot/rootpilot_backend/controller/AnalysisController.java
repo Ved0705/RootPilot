@@ -20,6 +20,12 @@ public class AnalysisController {
     @GetMapping("/exceptions")
     public Map<String, Long> getExceptionAnalysis() {
 
-        return incidentService.getExceptionCounts();
+        return incidentService.getExceptionMetrics();
+    }
+
+    @GetMapping("/top-service")
+    public Map<String, Object> getTopService() {
+
+        return incidentService.getTopFailingService();
     }
 }
