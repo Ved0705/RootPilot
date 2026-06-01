@@ -34,4 +34,8 @@ public class IncidentService {
 
         return incidentRepository.findById(id);
     }
+    public long getTotalIncidents() {
+
+        return incidentRepository.count();
+    }
 }
