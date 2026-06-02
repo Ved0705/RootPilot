@@ -1140,6 +1140,66 @@ public class IncidentService {
                     )
             );
         }
+        Set<String> correlationKeys =
+                redisTemplate.keys("correlation:*");
+
+        String topCorrelation = null;
+        long maxCorrelationCount = 0;
+
+        if (correlationKeys != null) {
+
+            for (String key : correlationKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue().get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxCorrelationCount) {
+
+                    maxCorrelationCount = count;
+
+                    topCorrelation =
+                            key.replace("correlation:", "");
+                }
+            }
+        }
+
+        if (topCorrelation != null) {
+
+            alerts.add(
+                    new Alert(
+                            "HIGH",
+                            "Strong correlation detected: "
+                                    + topCorrelation.replace("|", " with ")
+                    )
+            );
+        }
+        List<Incident> recentIncidents =
+                incidentRepository.findAll()
+                        .stream()
+                        .filter(i ->
+                                i.getTimestamp()
+                                        .isAfter(
+                                                LocalDateTime.now()
+                                                        .minusHours(1)
+                                        )
+                        )
+                        .toList();
+
+        if (recentIncidents.size() > 10) {
+
+            alerts.add(
+                    new Alert(
+                            "CRITICAL",
+                            "Recent failure spike detected"
+                    )
+            );
+        }
         return alerts;
     }
 
