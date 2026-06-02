@@ -29,7 +29,20 @@ public class IncidentService {
 
         redisTemplate.opsForValue()
                 .increment("liveIncidentCount");
-
+        System.out.println(
+                "SERVICE = "
+                        + incident.getServiceName()
+        );
+        redisTemplate.opsForValue()
+                .increment(
+                        "service:"
+                                + incident.getServiceName()
+                );
+        redisTemplate.opsForValue()
+                .increment(
+                        "exception:"
+                                + incident.getExceptionType()
+                );
         redisTemplate.delete("totalIncidents");
         redisTemplate.delete("serviceMetrics");
         redisTemplate.delete("exceptionMetrics");
@@ -792,5 +805,75 @@ public class IncidentService {
                 "liveIncidentCount",
                 liveCount
         );
+    }
+
+    public Map<String, Long> getLiveServiceCounts() {
+
+        Object count =
+                redisTemplate.opsForValue()
+                        .get("service:auth-service");
+
+        long serviceCount = 0;
+
+        if (count != null) {
+
+            serviceCount =
+                    Long.parseLong(
+                            count.toString()
+                    );
+        }
+
+        return Map.of(
+                "auth-service",
+                serviceCount
+        );
+    }
+    public Map<String, Object> testExceptionCounter() {
+
+        Object value =
+                redisTemplate.opsForValue()
+                        .get(
+                                "exception:NullPointerException"
+                        );
+
+        return Map.of(
+                "value",
+                String.valueOf(value)
+        );
+    }
+    public Map<String, Long> getLiveExceptionCounts() {
+
+        Object count =
+                redisTemplate.opsForValue()
+                        .get(
+                                "exception:NullPointerException"
+                        );
+
+        long exceptionCount = 0;
+
+        if (count != null) {
+
+            exceptionCount =
+                    Long.parseLong(
+                            count.toString()
+                    );
+        }
+
+        return Map.of(
+                "NullPointerException",
+                exceptionCount
+        );
+    }
+    public List<String> generateAlerts() {
+
+        List<String> alerts = new ArrayList<>();
+
+        long totalIncidents = incidentRepository.count();
+
+        if (totalIncidents > 20) {
+            alerts.add("HIGH incident volume detected");
+        }
+
+        return alerts;
     }
 }

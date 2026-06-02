@@ -125,4 +125,17 @@ public class AnalysisController {
 
         return incidentService.getLiveIncidentCount();
     }
+
+    @GetMapping("/live-services")
+    public Map<String, Long> getLiveServiceCounts() {
+
+        return incidentService.getLiveServiceCounts();
+    }
+
+
+    @GetMapping("/live-exceptions")
+    public Map<String, Long> getLiveExceptionCounts() {
+
+        return incidentService.getLiveExceptionCounts();
+    }
 }
