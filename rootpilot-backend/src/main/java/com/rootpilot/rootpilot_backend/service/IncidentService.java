@@ -973,10 +973,12 @@ public class IncidentService {
                                         )
                         )
                         .toList();
+        String topCorrelation = "N/A";
+
         Set<String> correlationKeys =
                 redisTemplate.keys("correlation:*");
 
-        String topCorrelation = null;
+
         long maxCorrelationCount = 0;
 
         if (correlationKeys != null) {
@@ -1247,7 +1249,41 @@ public class IncidentService {
 
         String topException = "N/A";
         long maxExceptionCount = 0;
+        int alertsCount =
+                generateAlerts().size();
 
+        int scoredAlertsCount =
+                generateScoredAlerts().size();
+        String topCorrelation = "N/A";
+
+        Set<String> correlationKeys =
+                redisTemplate.keys("correlation:*");
+
+        long maxCorrelationCount = 0;
+
+        if (correlationKeys != null) {
+
+            for (String key : correlationKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue().get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxCorrelationCount) {
+
+                    maxCorrelationCount = count;
+
+                    topCorrelation =
+                            key.replace("correlation:", "")
+                                    .replace("|", " with ");
+                }
+            }
+        }
         Set<String> exceptionKeys =
                 redisTemplate.keys("exception:*");
 
@@ -1289,7 +1325,10 @@ public class IncidentService {
                 totalIncidents,
                 topService,
                 topException,
-                severity
+                severity,
+                alertsCount,
+                scoredAlertsCount,
+                topCorrelation
         );
     }
 

@@ -6,19 +6,38 @@ public class DashboardSummary {
     private String topService;
     private String topException;
     private String severity;
+    private int alertsCount;
+    private int scoredAlertsCount;
+    private String topCorrelation;
 
     public DashboardSummary(
             long totalIncidents,
             String topService,
             String topException,
-            String severity) {
+            String severity,
+            int alertsCount,
+            int scoredAlertsCount,
+            String topCorrelation) {
 
         this.totalIncidents = totalIncidents;
         this.topService = topService;
         this.topException = topException;
         this.severity = severity;
+        this.alertsCount = alertsCount;
+        this.scoredAlertsCount = scoredAlertsCount;
+        this.topCorrelation = topCorrelation;
+    }
+    public int getAlertsCount() {
+        return alertsCount;
     }
 
+    public int getScoredAlertsCount() {
+        return scoredAlertsCount;
+    }
+
+    public String getTopCorrelation() {
+        return topCorrelation;
+    }
     public long getTotalIncidents() {
         return totalIncidents;
     }

@@ -1,6 +1,7 @@
 package com.rootpilot.rootpilot_backend.controller;
 
 import com.rootpilot.rootpilot_backend.dto.Alert;
+import com.rootpilot.rootpilot_backend.dto.DashboardSummary;
 import com.rootpilot.rootpilot_backend.service.IncidentService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -151,5 +152,10 @@ public class AnalysisController {
     public List<Alert> getScoredAlerts() {
 
         return incidentService.generateScoredAlerts();
+    }
+    @GetMapping("/dashboard")
+    public DashboardSummary getDashboard() {
+
+        return incidentService.getDashboardSummary();
     }
 }
