@@ -4,6 +4,8 @@ import java.util.*;
 
 import com.rootpilot.rootpilot_backend.dto.Alert;
 import com.rootpilot.rootpilot_backend.dto.DashboardSummary;
+import com.rootpilot.rootpilot_backend.dto.ExecutiveSummary;
+import com.rootpilot.rootpilot_backend.dto.LiveDashboard;
 import org.springframework.data.redis.core.RedisTemplate;
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.repository.IncidentRepository;
@@ -1331,5 +1333,136 @@ public class IncidentService {
                 topCorrelation
         );
     }
+    public ExecutiveSummary getExecutiveSummary() {
 
+        DashboardSummary dashboard =
+                getDashboardSummary();
+
+        StringBuilder summary = new StringBuilder();
+
+        summary.append(
+                        "RootPilot has detected a ")
+                .append(dashboard.getSeverity())
+                .append(" incident situation. ");
+
+        summary.append(
+                        dashboard.getTopService())
+                .append(" is currently the most unstable service. ");
+
+        summary.append(
+                        dashboard.getTopException())
+                .append(" is the dominant exception. ");
+
+        summary.append(
+                        "Total incidents observed: ")
+                .append(dashboard.getTotalIncidents())
+                .append(". ");
+
+        if (!dashboard.getTopCorrelation().equals("N/A")) {
+
+            summary.append(
+                            "Strong correlation detected between ")
+                    .append(dashboard.getTopCorrelation())
+                    .append(". ");
+        }
+
+        summary.append(
+                        dashboard.getAlertsCount())
+                .append(" active alerts are currently raised.");
+
+        return new ExecutiveSummary(
+                summary.toString()
+        );
+    }
+    public LiveDashboard getLiveDashboard() {
+
+        DashboardSummary dashboard =
+                getDashboardSummary();
+
+        ExecutiveSummary executive =
+                getExecutiveSummary();
+
+        return new LiveDashboard(
+                dashboard.getTotalIncidents(),
+                dashboard.getTopService(),
+                dashboard.getTopException(),
+                dashboard.getSeverity(),
+                dashboard.getAlertsCount(),
+                dashboard.getScoredAlertsCount(),
+                dashboard.getTopCorrelation(),
+                executive.getSummary(),
+                getHealthScore(),
+                getSystemStatus()
+        );
+    }
+    public int getHealthScore() {
+
+        int score = 100;
+
+        long incidents =
+                incidentRepository.count();
+
+        if (incidents > 100) {
+            score -= 30;
+        }
+        else if (incidents > 50) {
+            score -= 20;
+        }
+        else if (incidents > 20) {
+            score -= 10;
+        }
+
+        String severity =
+                (String) getSeverityAnalysis()
+                        .get("severity");
+
+        if ("CRITICAL".equalsIgnoreCase(severity)) {
+            score -= 30;
+        }
+        else if ("HIGH".equalsIgnoreCase(severity)) {
+            score -= 20;
+        }
+        else if ("MEDIUM".equalsIgnoreCase(severity)) {
+            score -= 10;
+        }
+
+        int alerts =
+                generateAlerts().size();
+
+        score -= Math.min(alerts * 5, 20);
+
+        return Math.max(score, 0);
+    }
+    public String getSystemStatus() {
+
+        int healthScore =
+                getHealthScore();
+
+        if (healthScore >= 80) {
+            return "HEALTHY";
+        }
+
+        if (healthScore >= 50) {
+            return "WARNING";
+        }
+
+        return "CRITICAL";
+    }
+    public String getLiveSummary() {
+
+        LiveDashboard dashboard =
+                getLiveDashboard();
+
+        return "RootPilot status is "
+                + getSystemStatus()
+                + " with a health score of "
+                + getHealthScore()
+                + ". "
+                + dashboard.getTopService()
+                + " is currently the most unstable service. "
+                + dashboard.getTopException()
+                + " remains the dominant exception. "
+                + dashboard.getAlertsCount()
+                + " active alerts are present.";
+    }
 }

@@ -1,6 +1,6 @@
 package com.rootpilot.rootpilot_backend.dto;
 
-public class DashboardSummary {
+public class LiveDashboard {
 
     private long totalIncidents;
     private String topService;
@@ -9,15 +9,22 @@ public class DashboardSummary {
     private int alertsCount;
     private int scoredAlertsCount;
     private String topCorrelation;
+    private String executiveSummary;
+    private int healthScore;
+    private String systemStatus;
 
-    public DashboardSummary(
+
+    public LiveDashboard(
             long totalIncidents,
             String topService,
             String topException,
             String severity,
             int alertsCount,
             int scoredAlertsCount,
-            String topCorrelation) {
+            String topCorrelation,
+            String executiveSummary,
+            int healthScore,
+            String systemStatus) {
 
         this.totalIncidents = totalIncidents;
         this.topService = topService;
@@ -26,19 +33,11 @@ public class DashboardSummary {
         this.alertsCount = alertsCount;
         this.scoredAlertsCount = scoredAlertsCount;
         this.topCorrelation = topCorrelation;
-
-    }
-    public int getAlertsCount() {
-        return alertsCount;
-    }
-
-    public int getScoredAlertsCount() {
-        return scoredAlertsCount;
+        this.executiveSummary = executiveSummary;
+        this.healthScore = healthScore;
+        this.systemStatus = systemStatus;
     }
 
-    public String getTopCorrelation() {
-        return topCorrelation;
-    }
     public long getTotalIncidents() {
         return totalIncidents;
     }
@@ -53,5 +52,28 @@ public class DashboardSummary {
 
     public String getSeverity() {
         return severity;
+    }
+
+    public int getAlertsCount() {
+        return alertsCount;
+    }
+
+    public int getScoredAlertsCount() {
+        return scoredAlertsCount;
+    }
+
+    public String getTopCorrelation() {
+        return topCorrelation;
+    }
+
+    public String getExecutiveSummary() {
+        return executiveSummary;
+    }
+
+    public int getHealthScore() {
+        return healthScore;
+    }
+    public String getSystemStatus() {
+        return systemStatus;
     }
 }

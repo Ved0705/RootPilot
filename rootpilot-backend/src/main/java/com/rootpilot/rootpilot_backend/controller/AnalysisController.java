@@ -2,6 +2,8 @@ package com.rootpilot.rootpilot_backend.controller;
 
 import com.rootpilot.rootpilot_backend.dto.Alert;
 import com.rootpilot.rootpilot_backend.dto.DashboardSummary;
+import com.rootpilot.rootpilot_backend.dto.ExecutiveSummary;
+import com.rootpilot.rootpilot_backend.dto.LiveDashboard;
 import com.rootpilot.rootpilot_backend.service.IncidentService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -157,5 +159,30 @@ public class AnalysisController {
     public DashboardSummary getDashboard() {
 
         return incidentService.getDashboardSummary();
+    }
+    @GetMapping("/executive-summary")
+    public ExecutiveSummary getExecutiveSummary() {
+
+        return incidentService.getExecutiveSummary();
+    }
+    @GetMapping("/live-dashboard")
+    public LiveDashboard getLiveDashboard() {
+
+        return incidentService.getLiveDashboard();
+    }
+    @GetMapping("/health-score")
+    public int getHealthScore() {
+
+        return incidentService.getHealthScore();
+    }
+    @GetMapping("/system-status")
+    public String getSystemStatus() {
+
+        return incidentService.getSystemStatus();
+    }
+    @GetMapping("/live-summary")
+    public String getLiveSummary() {
+
+        return incidentService.getLiveSummary();
     }
 }
