@@ -2079,6 +2079,187 @@ public class IncidentService {
 
         return new AnomalyExecutiveSummary(text);
     }
+    public List<RootCauseRecommendation> getRecommendations() {
+
+        List<RootCauseRecommendation> recommendations =
+                new ArrayList<>();
+
+        Set<String> exceptionKeys =
+                redisTemplate.keys("exception:*");
+
+        if (exceptionKeys == null) {
+            return recommendations;
+        }
+
+        for (String key : exceptionKeys) {
+
+            String exceptionName =
+                    key.replace("exception:", "");
+
+            Object value =
+                    redisTemplate.opsForValue().get(key);
+
+            long incidentCount = 0;
+
+            if (value instanceof Number number) {
+                incidentCount = number.longValue();
+            }
+
+            String recommendation =
+                    "Investigate recurring exception";
+
+            if (exceptionName.contains("NullPointer")) {
+
+                recommendation =
+                        "Review null validation and input checks";
+            }
+            else if (exceptionName.contains("Timeout")) {
+
+                recommendation =
+                        "Investigate latency and downstream dependencies";
+            }
+            else if (exceptionName.contains("Connection")) {
+
+                recommendation =
+                        "Verify dependent service availability";
+            }
+            else if (exceptionName.contains("OutOfMemory")) {
+
+                recommendation =
+                        "Inspect heap usage and memory leaks";
+            }
+
+            String priority;
+
+            if (incidentCount >= 100) {
+                priority = "CRITICAL";
+            }
+            else if (incidentCount >= 50) {
+                priority = "HIGH";
+            }
+            else if (incidentCount >= 20) {
+                priority = "MEDIUM";
+            }
+            else {
+                priority = "LOW";
+            }
+
+            String riskLevel = priority;
+
+            recommendations.add(
+                    new RootCauseRecommendation(
+                            (String) getTopFailingService().get("service"),
+                            exceptionName,
+                            incidentCount,
+                            riskLevel,
+                            recommendation,
+                            priority,
+                            "Generated from recurring exception patterns"));
+        }
+
+        recommendations.sort(
+                (a, b) ->
+                        Long.compare(
+                                b.getIncidentCount(),
+                                a.getIncidentCount()));
+
+        return recommendations;
+    }
+    public String getTopRecommendationService() {
+
+        List<RootCauseRecommendation> recommendations =
+                getRecommendations();
+
+        if (recommendations.isEmpty()) {
+            return "N/A";
+        }
+
+        return recommendations.get(0).getServiceName();
+    }
+    public RecommendationSummary getRecommendationSummary() {
+
+        List<RootCauseRecommendation> recommendations =
+                getRecommendations();
+
+        int totalRecommendations =
+                recommendations.size();
+
+        String topRecommendationService =
+                "N/A";
+
+        int criticalRecommendations =
+                0;
+
+        String highestPriority =
+                "LOW";
+
+        for (RootCauseRecommendation recommendation
+                : recommendations) {
+
+            if ("N/A".equals(topRecommendationService)) {
+
+                topRecommendationService =
+                        recommendation.getServiceName();
+            }
+
+            if ("CRITICAL".equals(
+                    recommendation.getPriority())) {
+
+                criticalRecommendations++;
+
+                highestPriority = "CRITICAL";
+            }
+            else if ("HIGH".equals(
+                    recommendation.getPriority())
+                    && !"CRITICAL".equals(highestPriority)) {
+
+                highestPriority = "HIGH";
+            }
+            else if ("MEDIUM".equals(
+                    recommendation.getPriority())
+                    && "LOW".equals(highestPriority)) {
+
+                highestPriority = "MEDIUM";
+            }
+        }
+
+        return new RecommendationSummary(
+                totalRecommendations,
+                topRecommendationService,
+                criticalRecommendations,
+                highestPriority
+        );
+    }
+    public RecommendationExecutiveSummary getRecommendationExecutiveSummary() {
+
+        List<RootCauseRecommendation> recommendations =
+                getRecommendations();
+
+        if (recommendations.isEmpty()) {
+
+            return new RecommendationExecutiveSummary(
+                    "No active recommendations available."
+            );
+        }
+
+        RootCauseRecommendation top =
+                recommendations.get(0);
+
+        String summary =
+                top.getServiceName()
+                        + " requires immediate attention. "
+                        + top.getExceptionName()
+                        + " is generating recurring incidents. "
+                        + "Recommended action: "
+                        + top.getRecommendation()
+                        + ". Priority level: "
+                        + top.getPriority()
+                        + ".";
+
+        return new RecommendationExecutiveSummary(
+                summary
+        );
+    }
 
 
 }

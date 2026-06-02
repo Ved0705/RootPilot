@@ -257,4 +257,26 @@ public class AnalysisController {
 
         return incidentService.getAnomalyExecutiveSummary();
     }
+    @GetMapping("/recommendations")
+    public List<RootCauseRecommendation> getRecommendations() {
+
+        return incidentService.getRecommendations();
+    }
+
+    @GetMapping("/top-recommendation")
+    public String getTopRecommendationService() {
+
+        return incidentService.getTopRecommendationService();
+    }
+
+    @GetMapping("/recommendation-summary")
+    public RecommendationSummary getRecommendationSummary() {
+
+        return incidentService.getRecommendationSummary();
+    }
+    @GetMapping("/recommendation-executive-summary")
+    public RecommendationExecutiveSummary getRecommendationExecutiveSummary() {
+
+        return incidentService.getRecommendationExecutiveSummary();
+    }
 }
