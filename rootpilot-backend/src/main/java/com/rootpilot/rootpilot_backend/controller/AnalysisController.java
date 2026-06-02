@@ -279,4 +279,26 @@ public class AnalysisController {
 
         return incidentService.getRecommendationExecutiveSummary();
     }
+    @GetMapping("/service-reliability")
+    public List<ServiceReliability> getServiceReliability() {
+
+        return incidentService.getServiceReliability();
+    }
+
+    @GetMapping("/top-risk-reliability")
+    public String getMostUnreliableService() {
+
+        return incidentService.getMostUnreliableService();
+    }
+
+    @GetMapping("/reliability-summary")
+    public ReliabilitySummary getReliabilitySummary() {
+
+        return incidentService.getReliabilitySummary();
+    }
+    @GetMapping("/reliability-executive-summary")
+    public ReliabilityExecutiveSummary getReliabilityExecutiveSummary() {
+
+        return incidentService.getReliabilityExecutiveSummary();
+    }
 }

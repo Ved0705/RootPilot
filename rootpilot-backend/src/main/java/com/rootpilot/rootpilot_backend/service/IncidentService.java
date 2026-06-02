@@ -2260,6 +2260,174 @@ public class IncidentService {
                 summary
         );
     }
+    public List<ServiceReliability> getServiceReliability() {
+
+        List<ServiceReliability> services =
+                new ArrayList<>();
+
+        Set<String> serviceKeys =
+                redisTemplate.keys("service:*");
+
+        if (serviceKeys == null) {
+            return services;
+        }
+
+        for (String key : serviceKeys) {
+
+            String serviceName =
+                    key.replace("service:", "");
+
+            Object value =
+                    redisTemplate.opsForValue().get(key);
+
+            long incidentCount = 0;
+
+            if (value instanceof Number number) {
+                incidentCount = number.longValue();
+            }
+
+            int reliabilityScore =
+                    Math.max(
+                            0,
+                            100 - (int) incidentCount
+                    );
+
+            double availability =
+                    Math.max(
+                            0,
+                            100 - (incidentCount * 0.1)
+                    );
+
+            double sloTarget = 99.0;
+
+            String sloStatus;
+
+            if (availability >= 99.0) {
+
+                sloStatus = "PASS";
+
+            } else if (availability >= 97.0) {
+
+                sloStatus = "AT_RISK";
+
+            } else {
+
+                sloStatus = "VIOLATED";
+            }
+
+            String riskLevel;
+
+            if (reliabilityScore >= 90) {
+
+                riskLevel = "LOW";
+
+            } else if (reliabilityScore >= 70) {
+
+                riskLevel = "MEDIUM";
+
+            } else if (reliabilityScore >= 50) {
+
+                riskLevel = "HIGH";
+
+            } else {
+
+                riskLevel = "CRITICAL";
+            }
+
+            services.add(
+                    new ServiceReliability(
+                            serviceName,
+                            incidentCount,
+                            reliabilityScore,
+                            availability,
+                            sloTarget,
+                            sloStatus,
+                            riskLevel
+                    )
+            );
+        }
+
+        services.sort(
+                Comparator.comparingInt(
+                        ServiceReliability::getReliabilityScore
+                )
+        );
+
+        return services;
+    }
+    public String getMostUnreliableService() {
+
+        List<ServiceReliability> services =
+                getServiceReliability();
+
+        if (services.isEmpty()) {
+            return "N/A";
+        }
+
+        return services.get(0).getServiceName();
+    }
+    public ReliabilitySummary getReliabilitySummary() {
+
+        List<ServiceReliability> services =
+                getServiceReliability();
+
+        int totalServices =
+                services.size();
+
+        String mostUnreliableService =
+                "N/A";
+
+        int lowestReliabilityScore =
+                100;
+
+        int sloViolations =
+                0;
+
+        for (ServiceReliability service : services) {
+
+            if (service.getReliabilityScore()
+                    < lowestReliabilityScore) {
+
+                lowestReliabilityScore =
+                        service.getReliabilityScore();
+
+                mostUnreliableService =
+                        service.getServiceName();
+            }
+
+            if ("VIOLATED".equals(
+                    service.getSloStatus())) {
+
+                sloViolations++;
+            }
+        }
+
+        if (services.isEmpty()) {
+            lowestReliabilityScore = 0;
+        }
+
+        return new ReliabilitySummary(
+                totalServices,
+                mostUnreliableService,
+                lowestReliabilityScore,
+                sloViolations
+        );
+    }
+    public ReliabilityExecutiveSummary getReliabilityExecutiveSummary() {
+
+        ReliabilitySummary summary =
+                getReliabilitySummary();
+
+        String text =
+                summary.getMostUnreliableService()
+                        + " is currently the least reliable service with a reliability score of "
+                        + summary.getLowestReliabilityScore()
+                        + ". "
+                        + summary.getSloViolations()
+                        + " service(s) are violating SLO targets and require attention.";
+
+        return new ReliabilityExecutiveSummary(text);
+    }
 
 
 }
