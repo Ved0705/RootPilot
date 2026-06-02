@@ -917,6 +917,26 @@ public class IncidentService {
                                         )
                         )
                         .toList();
+        Map<String, Long> correlations =
+                incidentRepository.findAll()
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                incident ->
+                                        incident.getServiceName()
+                                                + " -> "
+                                                + incident.getExceptionType(),
+                                Collectors.counting()
+                        ));
+
+        correlations.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue())
+                .ifPresent(entry ->
+                        alerts.add(
+                                "Strong correlation detected: "
+                                        + entry.getKey()
+                        )
+                );
         if (totalIncidents > 50) {
 
             alerts.add("CRITICAL incident situation detected");
