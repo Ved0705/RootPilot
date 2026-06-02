@@ -873,6 +873,40 @@ public class IncidentService {
         if (totalIncidents > 20) {
             alerts.add("HIGH incident volume detected");
         }
+        Map<String, Long> serviceCounts =
+                incidentRepository.findAll()
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                Incident::getServiceName,
+                                Collectors.counting()
+                        ));
+
+        serviceCounts.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue())
+                .ifPresent(entry ->
+                        alerts.add(
+                                entry.getKey()
+                                        + " is currently failing most often"
+                        )
+                );
+        Map<String, Long> exceptionCounts =
+                incidentRepository.findAll()
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                Incident::getExceptionType,
+                                Collectors.counting()
+                        ));
+
+        exceptionCounts.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue())
+                .ifPresent(entry ->
+                        alerts.add(
+                                entry.getKey()
+                                        + " is dominant"
+                        )
+                );
 
         return alerts;
     }

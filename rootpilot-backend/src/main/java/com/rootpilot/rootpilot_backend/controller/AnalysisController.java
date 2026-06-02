@@ -138,4 +138,12 @@ public class AnalysisController {
 
         return incidentService.getLiveExceptionCounts();
     }
+    @GetMapping("/alerts")
+    public Map<String, List<String>> getAlerts() {
+
+        return Map.of(
+                "alerts",
+                incidentService.generateAlerts()
+        );
+    }
 }
