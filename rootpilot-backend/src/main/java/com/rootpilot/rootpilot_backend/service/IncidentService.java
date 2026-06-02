@@ -868,45 +868,91 @@ public class IncidentService {
 
         List<String> alerts = new ArrayList<>();
 
-        long totalIncidents = incidentRepository.count();
+        Object countObject =
+                redisTemplate.opsForValue()
+                        .get("liveIncidentCount");
+
+        long totalIncidents = 0;
+
+        if (countObject instanceof Number number) {
+            totalIncidents = number.longValue();
+        }
 
         if (totalIncidents > 20) {
             alerts.add("HIGH incident volume detected");
         }
-        Map<String, Long> serviceCounts =
-                incidentRepository.findAll()
-                        .stream()
-                        .collect(Collectors.groupingBy(
-                                Incident::getServiceName,
-                                Collectors.counting()
-                        ));
+        Set<String> serviceKeys =
+                redisTemplate.keys("service:*");
 
-        serviceCounts.entrySet()
-                .stream()
-                .max(Map.Entry.comparingByValue())
-                .ifPresent(entry ->
-                        alerts.add(
-                                entry.getKey()
-                                        + " is currently failing most often"
-                        )
-                );
-        Map<String, Long> exceptionCounts =
-                incidentRepository.findAll()
-                        .stream()
-                        .collect(Collectors.groupingBy(
-                                Incident::getExceptionType,
-                                Collectors.counting()
-                        ));
+        String topService = null;
+        long maxCount = 0;
 
-        exceptionCounts.entrySet()
-                .stream()
-                .max(Map.Entry.comparingByValue())
-                .ifPresent(entry ->
-                        alerts.add(
-                                entry.getKey()
-                                        + " is dominant"
-                        )
-                );
+        if (serviceKeys != null) {
+
+            for (String key : serviceKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue().get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxCount) {
+
+                    maxCount = count;
+
+                    topService =
+                            key.replace("service:", "");
+                }
+            }
+        }
+
+        if (topService != null) {
+
+            alerts.add(
+                    topService
+                            + " is currently failing most often"
+            );
+        }
+        Set<String> exceptionKeys =
+                redisTemplate.keys("exception:*");
+
+        String topException = null;
+        long maxExceptionCount = 0;
+
+        if (exceptionKeys != null) {
+
+            for (String key : exceptionKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue().get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxExceptionCount) {
+
+                    maxExceptionCount = count;
+
+                    topException =
+                            key.replace("exception:", "");
+                }
+            }
+        }
+
+        if (topException != null) {
+
+            alerts.add(
+                    topException
+                            + " is dominant"
+            );
+        }
         List<Incident> recentIncidents =
                 incidentRepository.findAll()
                         .stream()
