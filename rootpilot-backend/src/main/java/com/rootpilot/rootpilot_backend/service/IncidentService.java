@@ -3,6 +3,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import com.rootpilot.rootpilot_backend.dto.Alert;
+import com.rootpilot.rootpilot_backend.dto.DashboardSummary;
 import org.springframework.data.redis.core.RedisTemplate;
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.repository.IncidentRepository;
@@ -1201,6 +1202,95 @@ public class IncidentService {
             );
         }
         return alerts;
+    }
+    public DashboardSummary getDashboardSummary() {
+
+        Object countObject =
+                redisTemplate.opsForValue()
+                        .get("liveIncidentCount");
+
+        long totalIncidents = 0;
+
+        if (countObject instanceof Number number) {
+            totalIncidents = number.longValue();
+        }
+
+        String topService = "N/A";
+        long maxServiceCount = 0;
+
+        Set<String> serviceKeys =
+                redisTemplate.keys("service:*");
+
+        if (serviceKeys != null) {
+
+            for (String key : serviceKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue()
+                                .get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxServiceCount) {
+
+                    maxServiceCount = count;
+
+                    topService =
+                            key.replace("service:", "");
+                }
+            }
+        }
+
+        String topException = "N/A";
+        long maxExceptionCount = 0;
+
+        Set<String> exceptionKeys =
+                redisTemplate.keys("exception:*");
+
+        if (exceptionKeys != null) {
+
+            for (String key : exceptionKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue()
+                                .get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxExceptionCount) {
+
+                    maxExceptionCount = count;
+
+                    topException =
+                            key.replace("exception:", "");
+                }
+            }
+        }
+
+        String severity = "LOW";
+
+        if (totalIncidents > 50) {
+            severity = "CRITICAL";
+        } else if (totalIncidents > 20) {
+            severity = "HIGH";
+        } else if (totalIncidents > 5) {
+            severity = "MEDIUM";
+        }
+
+        return new DashboardSummary(
+                totalIncidents,
+                topService,
+                topException,
+                severity
+        );
     }
 
 }
