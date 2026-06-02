@@ -907,6 +907,34 @@ public class IncidentService {
                                         + " is dominant"
                         )
                 );
+        List<Incident> recentIncidents =
+                incidentRepository.findAll()
+                        .stream()
+                        .filter(i ->
+                                i.getTimestamp()
+                                        .isAfter(
+                                                LocalDateTime.now().minusHours(1)
+                                        )
+                        )
+                        .toList();
+        if (totalIncidents > 50) {
+
+            alerts.add("CRITICAL incident situation detected");
+
+        } else if (totalIncidents > 20) {
+
+            alerts.add("HIGH severity incident situation");
+
+        } else if (totalIncidents > 5) {
+
+            alerts.add("MEDIUM severity incident situation");
+
+        }
+
+        if (recentIncidents.size() > 10) {
+            alerts.add("Recent failure spike detected");
+        }
+
 
         return alerts;
     }
