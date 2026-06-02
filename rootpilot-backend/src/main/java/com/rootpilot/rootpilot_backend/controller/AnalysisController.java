@@ -237,4 +237,24 @@ public class AnalysisController {
 
         return incidentService.getPredictionExecutiveSummary();
     }
+    @GetMapping("/anomalies")
+    public List<AnomalyDetection> getAnomalies() {
+
+        return incidentService.getAnomalies();
+    }
+    @GetMapping("/top-anomaly")
+    public String getTopAnomalyService() {
+
+        return incidentService.getTopAnomalyService();
+    }
+    @GetMapping("/anomaly-summary")
+    public AnomalySummary getAnomalySummary() {
+
+        return incidentService.getAnomalySummary();
+    }
+    @GetMapping("/anomaly-executive-summary")
+    public AnomalyExecutiveSummary getAnomalyExecutiveSummary() {
+
+        return incidentService.getAnomalyExecutiveSummary();
+    }
 }

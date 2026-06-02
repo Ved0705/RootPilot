@@ -1920,5 +1920,165 @@ public class IncidentService {
 
         return new PredictionExecutiveSummary(text);
     }
+    public List<AnomalyDetection> getAnomalies() {
+
+        List<AnomalyDetection> anomalies =
+                new ArrayList<>();
+
+        Set<String> serviceKeys =
+                redisTemplate.keys("service:*");
+
+        if (serviceKeys == null || serviceKeys.isEmpty()) {
+            return anomalies;
+        }
+
+        long totalIncidents = 0;
+
+        for (String key : serviceKeys) {
+
+            Object value =
+                    redisTemplate.opsForValue().get(key);
+
+            if (value instanceof Number number) {
+                totalIncidents += number.longValue();
+            }
+        }
+
+        double averageCount =
+                (double) totalIncidents /
+                        serviceKeys.size();
+
+        for (String key : serviceKeys) {
+
+            String serviceName =
+                    key.replace("service:", "");
+
+            Object value =
+                    redisTemplate.opsForValue().get(key);
+
+            long incidentCount = 0;
+
+            if (value instanceof Number number) {
+                incidentCount = number.longValue();
+            }
+
+            double deviation =
+                    incidentCount - averageCount;
+
+            double anomalyScore = 0;
+
+            if (averageCount > 0) {
+                anomalyScore =
+                        Math.abs(deviation)
+                                / averageCount
+                                * 100;
+            }
+
+            String anomalyLevel;
+
+            if (anomalyScore >= 150) {
+                anomalyLevel = "CRITICAL";
+            }
+            else if (anomalyScore >= 75) {
+                anomalyLevel = "HIGH";
+            }
+            else if (anomalyScore >= 25) {
+                anomalyLevel = "WATCH";
+            }
+            else {
+                anomalyLevel = "NORMAL";
+            }
+
+            String reason =
+                    "Deviation from average incident volume";
+
+            anomalies.add(
+                    new AnomalyDetection(
+                            serviceName,
+                            incidentCount,
+                            averageCount,
+                            deviation,
+                            anomalyScore,
+                            anomalyLevel,
+                            reason));
+        }
+
+        anomalies.sort(
+                (a, b) ->
+                        Double.compare(
+                                b.getAnomalyScore(),
+                                a.getAnomalyScore()));
+
+        return anomalies;
+    }
+    public String getTopAnomalyService() {
+
+        List<AnomalyDetection> anomalies =
+                getAnomalies();
+
+        if (anomalies.isEmpty()) {
+            return "N/A";
+        }
+
+        return anomalies.get(0).getServiceName();
+    }
+    public AnomalySummary getAnomalySummary() {
+
+        List<AnomalyDetection> anomalies =
+                getAnomalies();
+
+        int totalAnomalies =
+                anomalies.size();
+
+        String topAnomalyService =
+                "N/A";
+
+        double highestAnomalyScore =
+                0;
+
+        int criticalAnomalies =
+                0;
+
+        for (AnomalyDetection anomaly : anomalies) {
+
+            if (anomaly.getAnomalyScore()
+                    > highestAnomalyScore) {
+
+                highestAnomalyScore =
+                        anomaly.getAnomalyScore();
+
+                topAnomalyService =
+                        anomaly.getServiceName();
+            }
+
+            if ("CRITICAL".equals(
+                    anomaly.getAnomalyLevel())) {
+
+                criticalAnomalies++;
+            }
+        }
+
+        return new AnomalySummary(
+                totalAnomalies,
+                topAnomalyService,
+                highestAnomalyScore,
+                criticalAnomalies);
+    }
+    public AnomalyExecutiveSummary getAnomalyExecutiveSummary() {
+
+        AnomalySummary summary =
+                getAnomalySummary();
+
+        String text =
+                summary.getTopAnomalyService()
+                        + " shows the highest anomalous behavior with an anomaly score of "
+                        + summary.getHighestAnomalyScore()
+                        + ". "
+                        + summary.getCriticalAnomalies()
+                        + " critical anomaly/anomalies currently require investigation.";
+
+        return new AnomalyExecutiveSummary(text);
+    }
+
 
 }
