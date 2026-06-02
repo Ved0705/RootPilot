@@ -2,10 +2,7 @@ package com.rootpilot.rootpilot_backend.service;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import com.rootpilot.rootpilot_backend.dto.Alert;
-import com.rootpilot.rootpilot_backend.dto.DashboardSummary;
-import com.rootpilot.rootpilot_backend.dto.ExecutiveSummary;
-import com.rootpilot.rootpilot_backend.dto.LiveDashboard;
+import com.rootpilot.rootpilot_backend.dto.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.repository.IncidentRepository;
@@ -1464,5 +1461,14 @@ public class IncidentService {
                 + " remains the dominant exception. "
                 + dashboard.getAlertsCount()
                 + " active alerts are present.";
+    }
+    public DashboardSnapshot getDashboardSnapshot() {
+
+        return new DashboardSnapshot(
+                getLiveDashboard(),
+                getHealthScore(),
+                getSystemStatus(),
+                getLiveSummary()
+        );
     }
 }
