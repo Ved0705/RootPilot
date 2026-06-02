@@ -217,4 +217,24 @@ public class AnalysisController {
 
         return incidentService.getDependencyExecutiveSummary();
     }
+    @GetMapping("/failure-predictions")
+    public List<FailurePrediction> getFailurePredictions() {
+
+        return incidentService.getFailurePredictions();
+    }
+    @GetMapping("/top-risk-services")
+    public String getTopRiskService() {
+
+        return incidentService.getTopRiskService();
+    }
+    @GetMapping("/prediction-summary")
+    public PredictionSummary getPredictionSummary() {
+
+        return incidentService.getPredictionSummary();
+    }
+    @GetMapping("/prediction-executive-summary")
+    public PredictionExecutiveSummary getPredictionExecutiveSummary() {
+
+        return incidentService.getPredictionExecutiveSummary();
+    }
 }

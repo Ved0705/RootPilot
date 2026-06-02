@@ -1781,5 +1781,144 @@ public class IncidentService {
 
         return new DependencyExecutiveSummary(summary);
     }
+    public List<FailurePrediction> getFailurePredictions() {
+
+        List<FailurePrediction> predictions = new ArrayList<>();
+
+        Set<String> serviceKeys =
+                redisTemplate.keys("service:*");
+
+        if (serviceKeys == null) {
+            return predictions;
+        }
+
+        for (String key : serviceKeys) {
+
+            String serviceName =
+                    key.replace("service:", "");
+
+            Object value =
+                    redisTemplate.opsForValue().get(key);
+
+            long incidentCount = 0;
+
+            if (value instanceof Number number) {
+                incidentCount = number.longValue();
+            }
+
+            long alertCount = incidentCount / 5;
+
+            long dependencyRisk = incidentCount / 4;
+
+            double riskScore =
+                    incidentCount
+                            + alertCount
+                            + dependencyRisk;
+
+            String predictedRisk;
+
+            if (riskScore >= 100) {
+                predictedRisk = "CRITICAL";
+            }
+            else if (riskScore >= 60) {
+                predictedRisk = "HIGH";
+            }
+            else if (riskScore >= 30) {
+                predictedRisk = "MEDIUM";
+            }
+            else {
+                predictedRisk = "LOW";
+            }
+
+            String predictionReason =
+                    "Based on incident frequency, alerts and dependency risk";
+
+            predictions.add(
+                    new FailurePrediction(
+                            serviceName,
+                            incidentCount,
+                            alertCount,
+                            dependencyRisk,
+                            riskScore,
+                            predictedRisk,
+                            predictionReason));
+        }
+
+        predictions.sort(
+                (a, b) ->
+                        Double.compare(
+                                b.getRiskScore(),
+                                a.getRiskScore()));
+
+        return predictions;
+    }
+    public String getTopRiskService() {
+
+        List<FailurePrediction> predictions =
+                getFailurePredictions();
+
+        if (predictions.isEmpty()) {
+            return "N/A";
+        }
+
+        return predictions.get(0).getServiceName();
+    }
+    public PredictionSummary getPredictionSummary() {
+
+        List<FailurePrediction> predictions =
+                getFailurePredictions();
+
+        int totalPredictions =
+                predictions.size();
+
+        String topRiskService =
+                "N/A";
+
+        double highestRiskScore =
+                0;
+
+        int criticalServices =
+                0;
+
+        for (FailurePrediction prediction : predictions) {
+
+            if (prediction.getRiskScore()
+                    > highestRiskScore) {
+
+                highestRiskScore =
+                        prediction.getRiskScore();
+
+                topRiskService =
+                        prediction.getServiceName();
+            }
+
+            if ("CRITICAL".equals(
+                    prediction.getPredictedRisk())) {
+
+                criticalServices++;
+            }
+        }
+
+        return new PredictionSummary(
+                totalPredictions,
+                topRiskService,
+                highestRiskScore,
+                criticalServices);
+    }
+    public PredictionExecutiveSummary getPredictionExecutiveSummary() {
+
+        PredictionSummary summary =
+                getPredictionSummary();
+
+        String text =
+                summary.getTopRiskService()
+                        + " is currently the highest-risk service with a risk score of "
+                        + summary.getHighestRiskScore()
+                        + ". "
+                        + summary.getCriticalServices()
+                        + " service(s) require immediate attention.";
+
+        return new PredictionExecutiveSummary(text);
+    }
 
 }
