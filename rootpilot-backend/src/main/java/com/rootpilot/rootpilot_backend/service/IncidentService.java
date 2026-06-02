@@ -43,6 +43,13 @@ public class IncidentService {
                         "exception:"
                                 + incident.getExceptionType()
                 );
+        redisTemplate.opsForValue()
+                .increment(
+                        "correlation:"
+                                + incident.getServiceName()
+                                + "|"
+                                + incident.getExceptionType()
+                );
         redisTemplate.delete("totalIncidents");
         redisTemplate.delete("serviceMetrics");
         redisTemplate.delete("exceptionMetrics");
@@ -963,26 +970,43 @@ public class IncidentService {
                                         )
                         )
                         .toList();
-        Map<String, Long> correlations =
-                incidentRepository.findAll()
-                        .stream()
-                        .collect(Collectors.groupingBy(
-                                incident ->
-                                        incident.getServiceName()
-                                                + " -> "
-                                                + incident.getExceptionType(),
-                                Collectors.counting()
-                        ));
+        Set<String> correlationKeys =
+                redisTemplate.keys("correlation:*");
 
-        correlations.entrySet()
-                .stream()
-                .max(Map.Entry.comparingByValue())
-                .ifPresent(entry ->
-                        alerts.add(
-                                "Strong correlation detected: "
-                                        + entry.getKey()
-                        )
-                );
+        String topCorrelation = null;
+        long maxCorrelationCount = 0;
+
+        if (correlationKeys != null) {
+
+            for (String key : correlationKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue().get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxCorrelationCount) {
+
+                    maxCorrelationCount = count;
+
+                    topCorrelation =
+                            key.replace("correlation:", "");
+                }
+            }
+        }
+
+        if (topCorrelation != null) {
+
+            alerts.add(
+                    "Strong correlation detected: "
+                            + topCorrelation
+                            .replace("|", " with ")
+            );
+        }
         if (totalIncidents > 50) {
 
             alerts.add("CRITICAL incident situation detected");
