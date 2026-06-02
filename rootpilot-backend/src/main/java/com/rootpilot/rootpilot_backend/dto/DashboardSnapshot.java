@@ -6,6 +6,9 @@ public class DashboardSnapshot {
     private int healthScore;
     private String systemStatus;
     private String liveSummary;
+    private String topDependency;
+
+    private String highestDependencyRisk;
 
     public DashboardSnapshot(
             LiveDashboard dashboard,

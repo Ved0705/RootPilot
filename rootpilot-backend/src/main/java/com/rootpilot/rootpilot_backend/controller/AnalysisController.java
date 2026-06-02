@@ -187,4 +187,34 @@ public class AnalysisController {
 
         return incidentService.getDashboardSnapshot();
     }
+    @GetMapping("/service-dependencies")
+    public List<ServiceDependency> getServiceDependencies() {
+
+        return incidentService.getServiceDependencies();
+    }
+    @GetMapping("/top-dependencies")
+    public List<ServiceDependency> getTopDependencies() {
+
+        return incidentService.getTopDependencies();
+    }
+    @GetMapping("/dependency-summary")
+    public DependencySummary getDependencySummary() {
+
+        return incidentService.getDependencySummary();
+    }
+    @GetMapping("/cascade-failures")
+    public List<CascadeFailure> getCascadeFailures() {
+
+        return incidentService.getCascadeFailures();
+    }
+    @GetMapping("/dependency-risks")
+    public List<DependencyRisk> getDependencyRisks() {
+
+        return incidentService.getDependencyRisks();
+    }
+    @GetMapping("/dependency-executive-summary")
+    public DependencyExecutiveSummary getDependencyExecutiveSummary() {
+
+        return incidentService.getDependencyExecutiveSummary();
+    }
 }

@@ -1,7 +1,12 @@
 package com.rootpilot.rootpilot_backend.service;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import com.rootpilot.rootpilot_backend.dto.ServiceDependency;
 
+import java.time.Duration;
+
+import java.util.ArrayList;
 import com.rootpilot.rootpilot_backend.dto.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import com.rootpilot.rootpilot_backend.entity.Incident;
@@ -1310,6 +1315,7 @@ public class IncidentService {
             }
         }
 
+
         String severity = "LOW";
 
         if (totalIncidents > 50) {
@@ -1319,6 +1325,14 @@ public class IncidentService {
         } else if (totalIncidents > 5) {
             severity = "MEDIUM";
         }
+        String topDependency =
+                getTopDependencyName();
+
+        String highestDependencyRisk =
+                getHighestDependencyRisk();
+
+        long totalDependencies =
+                getTopDependencies().size();
 
         return new DashboardSummary(
                 totalIncidents,
@@ -1327,7 +1341,10 @@ public class IncidentService {
                 severity,
                 alertsCount,
                 scoredAlertsCount,
-                topCorrelation
+                topCorrelation,
+                topDependency,
+                highestDependencyRisk,
+                totalDependencies
         );
     }
     public ExecutiveSummary getExecutiveSummary() {
@@ -1378,7 +1395,14 @@ public class IncidentService {
 
         ExecutiveSummary executive =
                 getExecutiveSummary();
+        String topDependency =
+                getTopDependencyName();
 
+        String highestDependencyRisk =
+                getHighestDependencyRisk();
+
+        long totalDependencies =
+                getTopDependencies().size();
         return new LiveDashboard(
                 dashboard.getTotalIncidents(),
                 dashboard.getTopService(),
@@ -1463,7 +1487,14 @@ public class IncidentService {
                 + " active alerts are present.";
     }
     public DashboardSnapshot getDashboardSnapshot() {
+        String topDependency =
+                getTopDependencyName();
 
+        String highestDependencyRisk =
+                getHighestDependencyRisk();
+
+        long totalDependencies =
+                getTopDependencies().size();
         return new DashboardSnapshot(
                 getLiveDashboard(),
                 getHealthScore(),
@@ -1471,4 +1502,284 @@ public class IncidentService {
                 getLiveSummary()
         );
     }
+    public List<ServiceDependency> getServiceDependencies() {
+
+        List<Incident> incidents =
+                incidentRepository.findAll();
+
+        incidents.sort(
+                Comparator.comparing(
+                        Incident::getTimestamp));
+
+        List<ServiceDependency> dependencies =
+                new ArrayList<>();
+
+        for (int i = 0; i < incidents.size() - 1; i++) {
+
+            Incident current =
+                    incidents.get(i);
+
+            Incident next =
+                    incidents.get(i + 1);
+
+            if (current.getServiceName() == null
+                    || next.getServiceName() == null) {
+                continue;
+            }
+
+            if (current.getServiceName()
+                    .equals(next.getServiceName())) {
+                continue;
+            }
+
+            Duration duration =
+                    Duration.between(
+                            current.getTimestamp(),
+                            next.getTimestamp());
+
+            long minutes =
+                    duration.toMinutes();
+
+            if (minutes <= 5) {
+
+                dependencies.add(
+                        new ServiceDependency(
+                                current.getServiceName(),
+                                next.getServiceName(),
+                                1
+                        )
+                );
+            }
+        }
+
+        return dependencies;
+    }
+    public List<ServiceDependency> getTopDependencies() {
+
+        List<ServiceDependency> dependencies =
+                getServiceDependencies();
+
+        Map<String, Long> counts =
+                new HashMap<>();
+
+        for (ServiceDependency dependency : dependencies) {
+
+            String key =
+                    dependency.getSourceService()
+                            + "->"
+                            + dependency.getTargetService();
+
+            counts.put(
+                    key,
+                    counts.getOrDefault(key, 0L) + 1
+            );
+        }
+
+        List<ServiceDependency> results =
+                new ArrayList<>();
+
+        for (Map.Entry<String, Long> entry
+                : counts.entrySet()) {
+
+            String[] parts =
+                    entry.getKey().split("->");
+
+            results.add(
+                    new ServiceDependency(
+                            parts[0],
+                            parts[1],
+                            entry.getValue()
+                    )
+            );
+        }
+
+        results.sort(
+                (a, b) -> Long.compare(
+                        b.getDependencyCount(),
+                        a.getDependencyCount()
+                )
+        );
+
+        return results;
+    }
+    public DependencySummary getDependencySummary() {
+
+        List<ServiceDependency> dependencies =
+                getTopDependencies();
+
+        long totalDependencies = 0;
+
+        for (ServiceDependency dependency : dependencies) {
+
+            totalDependencies +=
+                    dependency.getDependencyCount();
+        }
+
+        long uniqueDependencies =
+                dependencies.size();
+
+        String topSourceService = "N/A";
+        String topTargetService = "N/A";
+        long topDependencyCount = 0;
+
+        if (!dependencies.isEmpty()) {
+
+            ServiceDependency top =
+                    dependencies.get(0);
+
+            topSourceService =
+                    top.getSourceService();
+
+            topTargetService =
+                    top.getTargetService();
+
+            topDependencyCount =
+                    top.getDependencyCount();
+        }
+
+        return new DependencySummary(
+                totalDependencies,
+                uniqueDependencies,
+                topSourceService,
+                topTargetService,
+                topDependencyCount
+        );
+    }
+    public List<CascadeFailure> getCascadeFailures() {
+
+        List<ServiceDependency> dependencies =
+                getTopDependencies();
+
+        List<CascadeFailure> cascades =
+                new ArrayList<>();
+
+        for (ServiceDependency first : dependencies) {
+
+            for (ServiceDependency second : dependencies) {
+
+                if (first.getTargetService()
+                        .equals(second.getSourceService())) {
+
+                    cascades.add(
+                            new CascadeFailure(
+                                    first.getSourceService(),
+                                    first.getTargetService(),
+                                    second.getTargetService()
+                            )
+                    );
+                }
+            }
+        }
+
+        return cascades;
+    }
+    public List<DependencyRisk> getDependencyRisks() {
+
+        List<ServiceDependency> dependencies =
+                getTopDependencies();
+
+        List<DependencyRisk> risks =
+                new ArrayList<>();
+
+        for (ServiceDependency dependency : dependencies) {
+
+            long count =
+                    dependency.getDependencyCount();
+
+            String riskLevel;
+
+            if (count >= 10) {
+
+                riskLevel = "CRITICAL";
+
+            } else if (count >= 5) {
+
+                riskLevel = "HIGH";
+
+            } else if (count >= 3) {
+
+                riskLevel = "MEDIUM";
+
+            } else {
+
+                riskLevel = "LOW";
+            }
+
+            risks.add(
+                    new DependencyRisk(
+                            dependency.getSourceService(),
+                            dependency.getTargetService(),
+                            count,
+                            riskLevel
+                    )
+            );
+        }
+
+        return risks;
+    }
+    private String getTopDependencyName() {
+
+        List<ServiceDependency> dependencies =
+                getTopDependencies();
+
+        if (dependencies.isEmpty()) {
+            return "N/A";
+        }
+
+        ServiceDependency top =
+                dependencies.get(0);
+
+        return top.getSourceService()
+                + " -> "
+                + top.getTargetService();
+    }
+    private String getHighestDependencyRisk() {
+
+        List<DependencyRisk> risks =
+                getDependencyRisks();
+
+        if (risks.isEmpty()) {
+            return "N/A";
+        }
+
+        return risks.get(0).getRiskLevel();
+    }
+    public DependencyExecutiveSummary getDependencyExecutiveSummary() {
+
+        List<ServiceDependency> dependencies =
+                getTopDependencies();
+
+        List<DependencyRisk> risks =
+                getDependencyRisks();
+
+        if (dependencies.isEmpty()) {
+
+            return new DependencyExecutiveSummary(
+                    "No service dependency relationships detected."
+            );
+        }
+
+        ServiceDependency topDependency =
+                dependencies.get(0);
+
+        String riskLevel = "LOW";
+
+        if (!risks.isEmpty()) {
+            riskLevel = risks.get(0).getRiskLevel();
+        }
+
+        String summary =
+                "Top dependency detected between "
+                        + topDependency.getSourceService()
+                        + " and "
+                        + topDependency.getTargetService()
+                        + ". Risk level is "
+                        + riskLevel
+                        + ". Total dependency chains detected: "
+                        + dependencies.size()
+                        + ".";
+
+        return new DependencyExecutiveSummary(summary);
+    }
+
 }

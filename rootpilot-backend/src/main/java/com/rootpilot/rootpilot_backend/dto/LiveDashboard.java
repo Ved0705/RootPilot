@@ -12,7 +12,9 @@ public class LiveDashboard {
     private String executiveSummary;
     private int healthScore;
     private String systemStatus;
+    private String topDependency;
 
+    private String highestDependencyRisk;
 
     public LiveDashboard(
             long totalIncidents,

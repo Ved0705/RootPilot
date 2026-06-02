@@ -9,6 +9,11 @@ public class DashboardSummary {
     private int alertsCount;
     private int scoredAlertsCount;
     private String topCorrelation;
+    private String topDependency;
+
+    private String highestDependencyRisk;
+
+    private long totalDependencies;
 
     public DashboardSummary(
             long totalIncidents,
@@ -17,7 +22,10 @@ public class DashboardSummary {
             String severity,
             int alertsCount,
             int scoredAlertsCount,
-            String topCorrelation) {
+            String topCorrelation,
+            String topDependency,
+            String highestDependencyRisk,
+            long totalDependencies) {
 
         this.totalIncidents = totalIncidents;
         this.topService = topService;
@@ -53,5 +61,28 @@ public class DashboardSummary {
 
     public String getSeverity() {
         return severity;
+    }
+    public String getTopDependency() {
+        return topDependency;
+    }
+
+    public void setTopDependency(String topDependency) {
+        this.topDependency = topDependency;
+    }
+
+    public String getHighestDependencyRisk() {
+        return highestDependencyRisk;
+    }
+
+    public void setHighestDependencyRisk(String highestDependencyRisk) {
+        this.highestDependencyRisk = highestDependencyRisk;
+    }
+
+    public long getTotalDependencies() {
+        return totalDependencies;
+    }
+
+    public void setTotalDependencies(long totalDependencies) {
+        this.totalDependencies = totalDependencies;
     }
 }
