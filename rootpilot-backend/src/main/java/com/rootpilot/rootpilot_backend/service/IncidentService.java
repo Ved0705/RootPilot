@@ -1,6 +1,8 @@
 package com.rootpilot.rootpilot_backend.service;
 import java.time.LocalDateTime;
 import java.util.*;
+
+import com.rootpilot.rootpilot_backend.dto.Alert;
 import org.springframework.data.redis.core.RedisTemplate;
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.repository.IncidentRepository;
@@ -1028,4 +1030,117 @@ public class IncidentService {
 
         return alerts;
     }
+    public List<Alert> generateScoredAlerts() {
+
+        List<Alert> alerts = new ArrayList<>();
+
+        Object countObject =
+                redisTemplate.opsForValue()
+                        .get("liveIncidentCount");
+
+        long totalIncidents = 0;
+
+        if (countObject instanceof Number number) {
+            totalIncidents = number.longValue();
+        }
+
+        if (totalIncidents > 50) {
+
+            alerts.add(
+                    new Alert(
+                            "CRITICAL",
+                            "Incident volume exceeds 50"
+                    )
+            );
+
+        } else if (totalIncidents > 20) {
+
+            alerts.add(
+                    new Alert(
+                            "HIGH",
+                            "Incident volume exceeds 20"
+                    )
+            );
+        }
+        Set<String> serviceKeys =
+                redisTemplate.keys("service:*");
+
+        String topService = null;
+        long maxServiceCount = 0;
+
+        if (serviceKeys != null) {
+
+            for (String key : serviceKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue().get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxServiceCount) {
+
+                    maxServiceCount = count;
+
+                    topService =
+                            key.replace("service:", "");
+                }
+            }
+        }
+
+        if (topService != null) {
+
+            alerts.add(
+                    new Alert(
+                            "HIGH",
+                            topService
+                                    + " is failing most often"
+                    )
+            );
+        }
+        Set<String> exceptionKeys =
+                redisTemplate.keys("exception:*");
+
+        String topException = null;
+        long maxExceptionCount = 0;
+
+        if (exceptionKeys != null) {
+
+            for (String key : exceptionKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue().get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxExceptionCount) {
+
+                    maxExceptionCount = count;
+
+                    topException =
+                            key.replace("exception:", "");
+                }
+            }
+        }
+
+        if (topException != null) {
+
+            alerts.add(
+                    new Alert(
+                            "HIGH",
+                            topException
+                                    + " is dominant"
+                    )
+            );
+        }
+        return alerts;
+    }
+
 }
