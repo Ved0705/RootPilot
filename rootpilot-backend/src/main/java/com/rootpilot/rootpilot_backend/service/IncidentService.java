@@ -27,10 +27,14 @@ public class IncidentService {
         Incident saved =
                 incidentRepository.save(incident);
 
+        redisTemplate.opsForValue()
+                .increment("liveIncidentCount");
+
         redisTemplate.delete("totalIncidents");
         redisTemplate.delete("serviceMetrics");
         redisTemplate.delete("exceptionMetrics");
         redisTemplate.delete("rcaSummary");
+        redisTemplate.delete("recentRcaSummary");
 
         return saved;
     }
@@ -768,4 +772,25 @@ public class IncidentService {
         return result;
     }
     private final RedisTemplate<String, Object> redisTemplate;
+    public Map<String, Long> getLiveIncidentCount() {
+
+        Object count =
+                redisTemplate.opsForValue()
+                        .get("liveIncidentCount");
+
+        long liveCount = 0;
+
+        if (count != null) {
+
+            liveCount =
+                    Long.parseLong(
+                            count.toString()
+                    );
+        }
+
+        return Map.of(
+                "liveIncidentCount",
+                liveCount
+        );
+    }
 }

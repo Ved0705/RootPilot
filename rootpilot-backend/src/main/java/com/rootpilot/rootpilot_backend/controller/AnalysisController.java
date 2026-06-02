@@ -120,4 +120,9 @@ public class AnalysisController {
 
         return incidentService.getSeverityAnalysis();
     }
+    @GetMapping("/live-count")
+    public Map<String, Long> getLiveIncidentCount() {
+
+        return incidentService.getLiveIncidentCount();
+    }
 }

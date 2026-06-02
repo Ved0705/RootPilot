@@ -2,8 +2,10 @@ package com.rootpilot.rootpilot_backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 
 @Configuration
 public class RedisConfig {
@@ -15,9 +17,25 @@ public class RedisConfig {
         RedisTemplate<String, Object> template =
                 new RedisTemplate<>();
 
-        template.setConnectionFactory(
-                connectionFactory
+        template.setConnectionFactory(connectionFactory);
+
+        template.setKeySerializer(
+                new StringRedisSerializer()
         );
+
+        template.setHashKeySerializer(
+                new StringRedisSerializer()
+        );
+
+        template.setValueSerializer(
+                new GenericJackson2JsonRedisSerializer()
+        );
+
+        template.setHashValueSerializer(
+                new GenericJackson2JsonRedisSerializer()
+        );
+
+        template.afterPropertiesSet();
 
         return template;
     }
