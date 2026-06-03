@@ -301,4 +301,24 @@ public class AnalysisController {
 
         return incidentService.getReliabilityExecutiveSummary();
     }
+    @GetMapping("/autonomous-actions")
+    public List<AutonomousAction> getAutonomousActions() {
+
+        return incidentService.getAutonomousActions();
+    }
+    @GetMapping("/top-action")
+    public String getTopAction() {
+
+        return incidentService.getTopAction();
+    }
+    @GetMapping("/action-summary")
+    public ActionSummary getActionSummary() {
+
+        return incidentService.getActionSummary();
+    }
+    @GetMapping("/action-executive-summary")
+    public ActionExecutiveSummary getActionExecutiveSummary() {
+
+        return incidentService.getActionExecutiveSummary();
+    }
 }

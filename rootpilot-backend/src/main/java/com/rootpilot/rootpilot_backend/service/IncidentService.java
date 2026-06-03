@@ -2428,6 +2428,183 @@ public class IncidentService {
 
         return new ReliabilityExecutiveSummary(text);
     }
+    public List<AutonomousAction> getAutonomousActions() {
 
+        List<AutonomousAction> actions =
+                new ArrayList<>();
+
+
+        /*
+         * Prediction Engine
+         */
+        PredictionSummary predictionSummary =
+                getPredictionSummary();
+
+        if (predictionSummary != null
+                && predictionSummary.getCriticalServices() > 0) {
+
+            actions.add(
+                    new AutonomousAction(
+                            "AUTO_PREVENTIVE_ACTION",
+                            predictionSummary.getTopRiskService(),
+                            "Prediction Engine",
+                            "HIGH",
+                            "Perform preventive investigation",
+                            "PENDING",
+                            "High failure risk predicted"));
+        }
+
+
+        /*
+         * Reliability Engine
+         */
+        ReliabilitySummary reliabilitySummary =
+                getReliabilitySummary();
+
+        if (reliabilitySummary != null
+                && reliabilitySummary.getSloViolations() > 0) {
+
+            actions.add(
+                    new AutonomousAction(
+                            "AUTO_RELIABILITY_ALERT",
+                            reliabilitySummary.getMostUnreliableService(),
+                            "Reliability Engine",
+                            "HIGH",
+                            "Review reliability degradation",
+                            "PENDING",
+                            "SLO violations detected"));
+        }
+
+
+        /*
+         * Dependency Engine
+         */
+        DependencySummary dependencySummary =
+                getDependencySummary();
+
+        if (dependencySummary != null
+                && dependencySummary.getTopDependencyCount() > 10) {
+
+            actions.add(
+                    new AutonomousAction(
+                            "AUTO_DEPENDENCY_REVIEW",
+                            dependencySummary.getTopSourceService(),
+                            "Dependency Engine",
+                            "MEDIUM",
+                            "Review dependency risk",
+                            "PENDING",
+                            "High dependency concentration detected"));
+        }
+
+
+        /*
+         * Recommendation Engine
+         */
+        RecommendationSummary recommendationSummary =
+                getRecommendationSummary();
+
+        if (recommendationSummary != null
+                && recommendationSummary.getCriticalRecommendations() > 0) {
+
+            actions.add(
+                    new AutonomousAction(
+                            "AUTO_INVESTIGATION",
+                            recommendationSummary.getTopRecommendationService(),
+                            "Recommendation Engine",
+                            "MEDIUM",
+                            "Investigate recommendation",
+                            "PENDING",
+                            "Critical recommendations detected"));
+        }
+
+        return actions;
+    }
+    public String getTopAction() {
+
+        List<AutonomousAction> actions =
+                getAutonomousActions();
+
+        if (actions.isEmpty()) {
+            return "N/A";
+        }
+
+        Map<String, Integer> actionCounts =
+                new HashMap<>();
+
+        for (AutonomousAction action : actions) {
+
+            actionCounts.put(
+                    action.getActionType(),
+                    actionCounts.getOrDefault(
+                            action.getActionType(),
+                            0) + 1);
+        }
+
+        String topAction = "N/A";
+        int maxCount = 0;
+
+        for (Map.Entry<String, Integer> entry
+                : actionCounts.entrySet()) {
+
+            if (entry.getValue() > maxCount) {
+
+                maxCount = entry.getValue();
+                topAction = entry.getKey();
+            }
+        }
+
+        return topAction;
+    }
+    public ActionSummary getActionSummary() {
+
+        List<AutonomousAction> actions =
+                getAutonomousActions();
+
+        int totalActions = actions.size();
+
+        int criticalActions = 0;
+        int pendingActions = 0;
+
+        for (AutonomousAction action : actions) {
+
+            if ("CRITICAL".equalsIgnoreCase(
+                    action.getSeverity())) {
+
+                criticalActions++;
+            }
+
+            if ("PENDING".equalsIgnoreCase(
+                    action.getStatus())) {
+
+                pendingActions++;
+            }
+        }
+        String topActionType = getTopAction();
+
+        return new ActionSummary(
+                totalActions,
+                criticalActions,
+                pendingActions,
+                topActionType);
+    }
+    public ActionExecutiveSummary getActionExecutiveSummary() {
+
+        ActionSummary summary =
+                getActionSummary();
+
+        String executiveSummary =
+                "RootPilot generated "
+                        + summary.getTotalActions()
+                        + " autonomous actions. "
+                        + summary.getCriticalActions()
+                        + " critical actions detected. "
+                        + summary.getTopActionType()
+                        + " is the dominant operational response. "
+                        + summary.getPendingActions()
+                        + " actions remain pending review.";
+
+        return new ActionExecutiveSummary(
+                executiveSummary);
+    }
 
 }
