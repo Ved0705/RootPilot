@@ -320,5 +320,23 @@ public class AnalysisController {
     public ActionExecutiveSummary getActionExecutiveSummary() {
 
         return incidentService.getActionExecutiveSummary();
+
+    }
+    @GetMapping("/knowledge-graph")
+    public Map<String, Object> getKnowledgeGraph() {
+
+        return incidentService.getKnowledgeGraph();
+    }
+    @GetMapping("/knowledge-graph-summary")
+    public KnowledgeGraphSummary getKnowledgeGraphSummary() {
+
+        return incidentService.getKnowledgeGraphSummary();
+    }
+    @GetMapping("/knowledge-graph-executive-summary")
+    public KnowledgeGraphExecutiveSummary
+    getKnowledgeGraphExecutiveSummary() {
+
+        return incidentService
+                .getKnowledgeGraphExecutiveSummary();
     }
 }

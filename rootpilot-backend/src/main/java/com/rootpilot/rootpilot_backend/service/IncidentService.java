@@ -2606,5 +2606,390 @@ public class IncidentService {
         return new ActionExecutiveSummary(
                 executiveSummary);
     }
+    public Map<String, Object> getKnowledgeGraph() {
+
+        List<Incident> incidents = incidentRepository.findAll();
+
+        List<KnowledgeGraphNode> nodes = new ArrayList<>();
+        List<KnowledgeGraphEdge> edges = new ArrayList<>();
+
+        Map<String, Integer> serviceRelationshipCount =
+                new HashMap<>();
+
+        for (Incident incident : incidents) {
+
+            String serviceName =
+                    incident.getServiceName();
+
+            String exceptionName =
+                    incident.getExceptionType();
+
+            String incidentNodeId =
+                    "INCIDENT-" + incident.getId();
+
+            serviceRelationshipCount.put(
+                    serviceName,
+                    serviceRelationshipCount.getOrDefault(
+                            serviceName,
+                            0
+                    ) + 1
+            );
+
+            if (exceptionName != null) {
+
+                edges.add(
+                        new KnowledgeGraphEdge(
+                                serviceName,
+                                exceptionName,
+                                "CAUSES",
+                                90
+                        )
+                );
+
+                nodes.add(
+                        new KnowledgeGraphNode(
+                                exceptionName,
+                                "EXCEPTION",
+                                exceptionName,
+                                1
+                        )
+                );
+            }
+
+            nodes.add(
+                    new KnowledgeGraphNode(
+                            incidentNodeId,
+                            "INCIDENT",
+                            incidentNodeId,
+                            1
+                    )
+            );
+
+            edges.add(
+                    new KnowledgeGraphEdge(
+                            serviceName,
+                            incidentNodeId,
+                            "TRIGGERS",
+                            85
+                    )
+            );
+        }
+
+        /*
+         * Incident ↔ Incident Correlation
+         */
+        for (int i = 0; i < incidents.size(); i++) {
+
+            for (int j = i + 1; j < incidents.size(); j++) {
+
+                Incident first =
+                        incidents.get(i);
+
+                Incident second =
+                        incidents.get(j);
+
+                if (first.getExceptionType() != null
+                        && second.getExceptionType() != null
+                        && first.getExceptionType()
+                        .equals(second.getExceptionType())) {
+
+                    edges.add(
+                            new KnowledgeGraphEdge(
+                                    "INCIDENT-" + first.getId(),
+                                    "INCIDENT-" + second.getId(),
+                                    "CORRELATED_WITH",
+                                    80
+                            )
+                    );
+                }
+            }
+        }
+
+        /*
+         * Service ↔ Service Discovery
+         */
+        for (int i = 0; i < incidents.size(); i++) {
+
+            for (int j = i + 1; j < incidents.size(); j++) {
+
+                Incident first =
+                        incidents.get(i);
+
+                Incident second =
+                        incidents.get(j);
+
+                String firstService =
+                        first.getServiceName();
+
+                String secondService =
+                        second.getServiceName();
+
+                if (firstService != null
+                        && secondService != null
+                        && !firstService.equals(secondService)) {
+
+                    edges.add(
+                            new KnowledgeGraphEdge(
+                                    firstService,
+                                    secondService,
+                                    "SERVICE_DEPENDS_ON",
+                                    75
+                            )
+                    );
+                }
+            }
+        }
+
+        for (Map.Entry<String, Integer> entry :
+                serviceRelationshipCount.entrySet()) {
+
+            nodes.add(
+                    new KnowledgeGraphNode(
+                            entry.getKey(),
+                            "SERVICE",
+                            entry.getKey(),
+                            entry.getValue()
+                    )
+            );
+        }
+
+        Map<String, Object> graph =
+                new HashMap<>();
+
+        graph.put("nodes", nodes);
+        graph.put("edges", edges);
+
+        return graph;
+    }
+
+    public KnowledgeGraphSummary getKnowledgeGraphSummary() {
+
+        Map<String, Object> graph =
+                getKnowledgeGraph();
+
+        List<KnowledgeGraphNode> nodes =
+                (List<KnowledgeGraphNode>) graph.get("nodes");
+
+        List<KnowledgeGraphEdge> edges =
+                (List<KnowledgeGraphEdge>) graph.get("edges");
+
+        int totalNodes = nodes.size();
+
+        int totalRelationships = edges.size();
+
+        String mostConnectedNode = "N/A";
+
+        int maxRelationships = 0;
+
+        for (KnowledgeGraphNode node : nodes) {
+
+            if (node.getRelationshipCount() >
+                    maxRelationships) {
+
+                maxRelationships =
+                        node.getRelationshipCount();
+
+                mostConnectedNode =
+                        node.getNodeName();
+            }
+        }
+
+        String strongestRelationship = "N/A";
+
+        int strongestStrength = 0;
+
+        for (KnowledgeGraphEdge edge : edges) {
+
+            if (edge.getStrength() >
+                    strongestStrength) {
+
+                strongestStrength =
+                        edge.getStrength();
+
+                strongestRelationship =
+                        edge.getSource()
+                                + " -> "
+                                + edge.getTarget();
+            }
+        }
+
+        double graphDensity = 0.0;
+
+        if (totalNodes > 1) {
+
+            graphDensity =
+                    (double) totalRelationships
+                            / (totalNodes * (totalNodes - 1));
+        }
+
+        int incidentClusters = 0;
+
+        Map<String, Integer> exceptionCounts =
+                new HashMap<>();
+
+        Set<String> relationshipTypes =
+                new HashSet<>();
+
+        for (KnowledgeGraphEdge edge : edges) {
+
+            relationshipTypes.add(
+                    edge.getRelationshipType()
+            );
+
+            if ("CORRELATED_WITH".equals(
+                    edge.getRelationshipType())) {
+
+                incidentClusters++;
+            }
+
+            if ("CAUSES".equals(
+                    edge.getRelationshipType())) {
+
+                exceptionCounts.put(
+                        edge.getTarget(),
+                        exceptionCounts.getOrDefault(
+                                edge.getTarget(),
+                                0
+                        ) + 1
+                );
+            }
+        }
+
+        String mostCommonException = "N/A";
+
+        int maxExceptionCount = 0;
+
+        for (Map.Entry<String, Integer> entry :
+                exceptionCounts.entrySet()) {
+
+            if (entry.getValue() >
+                    maxExceptionCount) {
+
+                maxExceptionCount =
+                        entry.getValue();
+
+                mostCommonException =
+                        entry.getKey();
+            }
+        }
+
+        double graphMaturityScore =
+                Math.min(
+                        100.0,
+                        totalNodes * 2.0
+                                + totalRelationships * 1.5
+                );
+
+        double relationshipDiversityScore =
+                relationshipTypes.size() * 20.0;
+
+        if (relationshipDiversityScore > 100) {
+
+            relationshipDiversityScore = 100;
+        }
+
+        double graphHealthScore =
+                (
+                        graphMaturityScore
+                                + relationshipDiversityScore
+                                + (graphDensity * 100)
+                ) / 3.0;
+
+        return new KnowledgeGraphSummary(
+                totalNodes,
+                totalRelationships,
+                mostConnectedNode,
+                strongestRelationship,
+                strongestStrength,
+                graphDensity,
+                incidentClusters,
+                mostCommonException,
+                graphMaturityScore,
+                relationshipDiversityScore,
+                graphHealthScore
+        );
+    }
+
+    public KnowledgeGraphExecutiveSummary
+    getKnowledgeGraphExecutiveSummary() {
+
+        KnowledgeGraphSummary summary =
+                getKnowledgeGraphSummary();
+
+        String graphHealth;
+
+        if (summary.getGraphHealthScore() >= 80) {
+
+            graphHealth = "EXCELLENT";
+
+        } else if (summary.getGraphHealthScore() >= 60) {
+
+            graphHealth = "HEALTHY";
+
+        } else if (summary.getGraphHealthScore() >= 40) {
+
+            graphHealth = "STABLE";
+
+        } else if (summary.getGraphHealthScore() >= 20) {
+
+            graphHealth = "DEGRADED";
+
+        } else {
+
+            graphHealth = "CRITICAL";
+        }
+
+        String riskLevel;
+
+        if (summary.getIncidentClusters() >= 20) {
+
+            riskLevel = "CRITICAL";
+
+        } else if (summary.getIncidentClusters() >= 10) {
+
+            riskLevel = "HIGH";
+
+        } else if (summary.getIncidentClusters() >= 5) {
+
+            riskLevel = "MEDIUM";
+
+        } else {
+
+            riskLevel = "LOW";
+        }
+
+        String recommendation;
+
+        if ("CRITICAL".equals(riskLevel)) {
+
+            recommendation =
+                    "Immediate investigation required. Recurring incident clusters indicate systemic instability.";
+
+        } else if ("HIGH".equals(riskLevel)) {
+
+            recommendation =
+                    "Review dependency chains and reduce concentration around critical services.";
+
+        } else if ("MEDIUM".equals(riskLevel)) {
+
+            recommendation =
+                    "Monitor "
+                            + summary.getMostConnectedNode()
+                            + " and recurring exception patterns.";
+
+        } else {
+
+            recommendation =
+                    "Knowledge graph indicates healthy operational behavior.";
+        }
+
+        return new KnowledgeGraphExecutiveSummary(
+                graphHealth,
+                summary.getMostConnectedNode(),
+                summary.getStrongestRelationship(),
+                riskLevel,
+                recommendation
+        );
+    }
 
 }
