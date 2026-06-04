@@ -1,0 +1,26 @@
+export const endpoints = {
+  health: '/health',
+  incidents: '/incidents',
+  incidentById: (id: number) => `/incidents/${id}`,
+  services: '/incidents/services',
+  metrics: '/metrics',
+  exceptionMetrics: '/metrics/exceptions',
+  serviceMetrics: '/metrics/services',
+  analysis: {
+    dashboard: '/analysis/dashboard', executiveSummary: '/analysis/executive-summary', liveDashboard: '/analysis/live-dashboard', dashboardSnapshot: '/analysis/dashboard-snapshot',
+    hourlyTrend: '/analysis/hourly-trend', severity: '/analysis/severity', scoredAlerts: '/analysis/scored-alerts', serviceRanking: '/analysis/service-ranking', exceptionRanking: '/analysis/exception-ranking',
+    correlations: '/analysis/correlations', recentCorrelations: '/analysis/recent-correlations', rcaSummary: '/analysis/rca-summary', recentRcaSummary: '/analysis/recent-rca-summary', recommendations: '/analysis/recommendations', recommendationSummary: '/analysis/recommendation-summary',
+    serviceDependencies: '/analysis/service-dependencies', topDependencies: '/analysis/top-dependencies', dependencySummary: '/analysis/dependency-summary', dependencyRisks: '/analysis/dependency-risks', cascadeFailures: '/analysis/cascade-failures', dependencyExecutiveSummary: '/analysis/dependency-executive-summary',
+    dependencyImpacts: '/analysis/dependency-impacts', dependencyImpactSummary: '/analysis/dependency-impact-summary', dependencyImpactExecutiveSummary: '/analysis/dependency-impact-executive-summary', dependencyRiskScores: '/analysis/dependency-risk-scores', dependencyRiskDashboard: '/analysis/dependency-risk-dashboard',
+    failurePredictions: '/analysis/failure-predictions', predictionSummary: '/analysis/prediction-summary', predictionExecutiveSummary: '/analysis/prediction-executive-summary', anomalies: '/analysis/anomalies', anomalySummary: '/analysis/anomaly-summary',
+    knowledgeGraph: '/analysis/knowledge-graph', knowledgeGraphSummary: '/analysis/knowledge-graph-summary', knowledgeGraphExecutiveSummary: '/analysis/knowledge-graph-executive-summary',
+    serviceReliability: '/analysis/service-reliability', reliabilitySummary: '/analysis/reliability-summary', reliabilityExecutiveSummary: '/analysis/reliability-executive-summary',
+    autonomousActions: '/analysis/autonomous-actions', actionSummary: '/analysis/action-summary', actionExecutiveSummary: '/analysis/action-executive-summary',
+    selfHealingRecommendations: '/analysis/self-healing-recommendations', selfHealingSummary: '/analysis/self-healing-summary', selfHealingExecutiveSummary: '/analysis/self-healing-executive-summary', selfHealingDashboard: '/analysis/self-healing-dashboard',
+    automationReadiness: '/analysis/automation-readiness', automationReadinessSummary: '/analysis/automation-readiness-summary', automationReadinessExecutiveSummary: '/analysis/automation-readiness-executive-summary', automationReadinessDashboard: '/analysis/automation-readiness-dashboard',
+    autonomousExecutionPlans: '/analysis/autonomous-execution-plans', orchestratorSummary: '/analysis/orchestrator-summary', orchestratorExecutiveSummary: '/analysis/orchestrator-executive-summary', orchestratorDashboard: '/analysis/orchestrator-dashboard',
+    operationalPriorities: '/analysis/operational-priorities', aiopsSummary: '/analysis/aiops-summary', aiopsExecutiveSummary: '/analysis/aiops-executive-summary', aiopsDashboard: '/analysis/aiops-dashboard',
+    // Backend currently prefixes these mappings twice because the controller class is already mapped to /analysis.
+    serviceResilience: '/analysis/analysis/service-resilience', serviceResilienceSummary: '/analysis/analysis/service-resilience-summary', serviceResilienceExecutiveSummary: '/analysis/analysis/service-resilience-executive-summary', resilienceRecommendations: '/analysis/analysis/resilience-recommendations', resilienceDashboard: '/analysis/analysis/resilience-dashboard',
+  },
+};

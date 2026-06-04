@@ -1,0 +1,1 @@
+export { dependencyService } from './platformServices';
