@@ -20,12 +20,14 @@ public class AnalysisController {
     private final IncidentService incidentService;
     private final AutomationReadinessService automationReadinessService;
     private final OrchestratorService orchestratorService;
+    private final AIOpsCommandCenterService aiOpsCommandCenterService;
 
     public AnalysisController(
             IncidentService incidentService,
             ResilienceIntelligenceService resilienceIntelligenceService,
             AutomationReadinessService automationReadinessService,
-            OrchestratorService orchestratorService) {
+            OrchestratorService orchestratorService,
+            AIOpsCommandCenterService aiOpsCommandCenterService) {
 
         this.incidentService = incidentService;
         this.resilienceIntelligenceService =
@@ -33,6 +35,7 @@ public class AnalysisController {
         this.automationReadinessService =
                 automationReadinessService;
         this.orchestratorService = orchestratorService;
+        this.aiOpsCommandCenterService = aiOpsCommandCenterService;
     }
 
     @GetMapping("/exceptions")
@@ -454,5 +457,29 @@ public class AnalysisController {
 
         return orchestratorService
                 .getOrchestratorDashboard();
+    }
+    @GetMapping("/operational-priorities")
+    public List<OperationalPriority> getOperationalPriorities() {
+
+        return aiOpsCommandCenterService
+                .getOperationalPriorities();
+    }
+    @GetMapping("/aiops-summary")
+    public AIOpsSummary getAIOpsSummary() {
+
+        return aiOpsCommandCenterService
+                .getAIOpsSummary();
+    }
+    @GetMapping("/aiops-executive-summary")
+    public AIOpsExecutiveSummary getAIOpsExecutiveSummary() {
+
+        return aiOpsCommandCenterService
+                .getAIOpsExecutiveSummary();
+    }
+    @GetMapping("/aiops-dashboard")
+    public AIOpsDashboard getAIOpsDashboard() {
+
+        return aiOpsCommandCenterService
+                .getAIOpsDashboard();
     }
 }
