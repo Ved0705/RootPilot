@@ -1,8 +1,6 @@
 package com.rootpilot.rootpilot_backend.controller;
 import com.rootpilot.rootpilot_backend.dto.*;
-import com.rootpilot.rootpilot_backend.service.AutomationReadinessService;
-import com.rootpilot.rootpilot_backend.service.IncidentService;
-import com.rootpilot.rootpilot_backend.service.ResilienceIntelligenceService;
+import com.rootpilot.rootpilot_backend.service.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,7 +9,6 @@ import com.rootpilot.rootpilot_backend.dto.ServiceResilienceSummary;
 import com.rootpilot.rootpilot_backend.dto.ServiceResilienceExecutiveSummary;
 import com.rootpilot.rootpilot_backend.dto.ResilienceRecommendation;
 import com.rootpilot.rootpilot_backend.dto.ResilienceDashboard;
-import com.rootpilot.rootpilot_backend.service.ResilienceIntelligenceService;
 
 import java.util.List;
 import java.util.Map;
@@ -22,17 +19,20 @@ public class AnalysisController {
 
     private final IncidentService incidentService;
     private final AutomationReadinessService automationReadinessService;
+    private final OrchestratorService orchestratorService;
 
     public AnalysisController(
             IncidentService incidentService,
             ResilienceIntelligenceService resilienceIntelligenceService,
-            AutomationReadinessService automationReadinessService) {
+            AutomationReadinessService automationReadinessService,
+            OrchestratorService orchestratorService) {
 
         this.incidentService = incidentService;
         this.resilienceIntelligenceService =
                 resilienceIntelligenceService;
         this.automationReadinessService =
                 automationReadinessService;
+        this.orchestratorService = orchestratorService;
     }
 
     @GetMapping("/exceptions")
@@ -423,5 +423,36 @@ public class AnalysisController {
 
         return automationReadinessService
                 .getAutomationReadinessDashboard();
+    }
+    @GetMapping("/autonomous-execution-plans")
+    public List<AutonomousExecutionPlan>
+    getAutonomousExecutionPlans() {
+
+        return orchestratorService
+                .getAutonomousExecutionPlans();
+    }
+
+    @GetMapping("/orchestrator-summary")
+    public OrchestratorSummary
+    getOrchestratorSummary() {
+
+        return orchestratorService
+                .getOrchestratorSummary();
+    }
+
+    @GetMapping("/orchestrator-executive-summary")
+    public OrchestratorExecutiveSummary
+    getOrchestratorExecutiveSummary() {
+
+        return orchestratorService
+                .getOrchestratorExecutiveSummary();
+    }
+
+    @GetMapping("/orchestrator-dashboard")
+    public OrchestratorDashboard
+    getOrchestratorDashboard() {
+
+        return orchestratorService
+                .getOrchestratorDashboard();
     }
 }
