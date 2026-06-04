@@ -1,0 +1,1 @@
+export { knowledgeGraphService } from './platformServices';
