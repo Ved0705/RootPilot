@@ -1,10 +1,16 @@
 package com.rootpilot.rootpilot_backend.controller;
-
 import com.rootpilot.rootpilot_backend.dto.*;
 import com.rootpilot.rootpilot_backend.service.IncidentService;
+import com.rootpilot.rootpilot_backend.service.ResilienceIntelligenceService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.rootpilot.rootpilot_backend.dto.ServiceResilience;
+import com.rootpilot.rootpilot_backend.dto.ServiceResilienceSummary;
+import com.rootpilot.rootpilot_backend.dto.ServiceResilienceExecutiveSummary;
+import com.rootpilot.rootpilot_backend.dto.ResilienceRecommendation;
+import com.rootpilot.rootpilot_backend.dto.ResilienceDashboard;
+import com.rootpilot.rootpilot_backend.service.ResilienceIntelligenceService;
 
 import java.util.List;
 import java.util.Map;
@@ -15,8 +21,13 @@ public class AnalysisController {
 
     private final IncidentService incidentService;
 
-    public AnalysisController(IncidentService incidentService) {
+    public AnalysisController(
+            IncidentService incidentService,
+            ResilienceIntelligenceService resilienceIntelligenceService) {
+
         this.incidentService = incidentService;
+        this.resilienceIntelligenceService =
+                resilienceIntelligenceService;
     }
 
     @GetMapping("/exceptions")
@@ -338,5 +349,44 @@ public class AnalysisController {
 
         return incidentService
                 .getKnowledgeGraphExecutiveSummary();
+    }
+    private final ResilienceIntelligenceService resilienceIntelligenceService;
+    @GetMapping("/analysis/service-resilience")
+    public List<ServiceResilience> getServiceResilience() {
+
+        return resilienceIntelligenceService
+                .getServiceResilience();
+    }
+
+    @GetMapping("/analysis/service-resilience-summary")
+    public ServiceResilienceSummary
+    getServiceResilienceSummary() {
+
+        return resilienceIntelligenceService
+                .getServiceResilienceSummary();
+    }
+
+    @GetMapping("/analysis/service-resilience-executive-summary")
+    public ServiceResilienceExecutiveSummary
+    getServiceResilienceExecutiveSummary() {
+
+        return resilienceIntelligenceService
+                .getServiceResilienceExecutiveSummary();
+    }
+
+    @GetMapping("/analysis/resilience-recommendations")
+    public List<ResilienceRecommendation>
+    getResilienceRecommendations() {
+
+        return resilienceIntelligenceService
+                .getResilienceRecommendations();
+    }
+
+    @GetMapping("/analysis/resilience-dashboard")
+    public ResilienceDashboard
+    getResilienceDashboard() {
+
+        return resilienceIntelligenceService
+                .getResilienceDashboard();
     }
 }
