@@ -1,5 +1,6 @@
 package com.rootpilot.rootpilot_backend.controller;
 import com.rootpilot.rootpilot_backend.dto.*;
+import com.rootpilot.rootpilot_backend.service.AutomationReadinessService;
 import com.rootpilot.rootpilot_backend.service.IncidentService;
 import com.rootpilot.rootpilot_backend.service.ResilienceIntelligenceService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,14 +21,18 @@ import java.util.Map;
 public class AnalysisController {
 
     private final IncidentService incidentService;
+    private final AutomationReadinessService automationReadinessService;
 
     public AnalysisController(
             IncidentService incidentService,
-            ResilienceIntelligenceService resilienceIntelligenceService) {
+            ResilienceIntelligenceService resilienceIntelligenceService,
+            AutomationReadinessService automationReadinessService) {
 
         this.incidentService = incidentService;
         this.resilienceIntelligenceService =
                 resilienceIntelligenceService;
+        this.automationReadinessService =
+                automationReadinessService;
     }
 
     @GetMapping("/exceptions")
@@ -388,5 +393,35 @@ public class AnalysisController {
 
         return resilienceIntelligenceService
                 .getResilienceDashboard();
+    }
+    @GetMapping("/automation-readiness")
+    public List<AutomationReadiness> getAutomationReadiness() {
+
+        return automationReadinessService
+                .getAutomationReadiness();
+    }
+
+    @GetMapping("/automation-readiness-summary")
+    public AutomationReadinessSummary
+    getAutomationReadinessSummary() {
+
+        return automationReadinessService
+                .getAutomationReadinessSummary();
+    }
+
+    @GetMapping("/automation-readiness-executive-summary")
+    public AutomationReadinessExecutiveSummary
+    getAutomationReadinessExecutiveSummary() {
+
+        return automationReadinessService
+                .getAutomationReadinessExecutiveSummary();
+    }
+
+    @GetMapping("/automation-readiness-dashboard")
+    public AutomationReadinessDashboard
+    getAutomationReadinessDashboard() {
+
+        return automationReadinessService
+                .getAutomationReadinessDashboard();
     }
 }
