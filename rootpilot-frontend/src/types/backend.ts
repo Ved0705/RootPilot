@@ -8,6 +8,17 @@ export interface StringNumberMap { [key: string]: number }
 
 export interface StringObjectMap { [key: string]: unknown }
 
+export interface SpikeDetection {
+  spikeDetected: boolean;
+  message?: string;
+  recentIncidents?: number;
+  averageIncidents?: number;
+  deviation?: number;
+}
+
+export type TrendSummary = StringObjectMap;
+
+
 export interface Incident {
   id: number;
   serviceName: string;
@@ -152,6 +163,8 @@ export interface DashboardSnapshot {
   liveSummary: string;
   topDependency: string;
   highestDependencyRisk: string;
+  latency?: string;
+  nodes?: Record<string, string>;
 }
 
 export interface DashboardSummary {
@@ -235,6 +248,11 @@ export interface FailurePrediction {
   riskScore: number;
   predictedRisk: string;
   predictionReason: string;
+  confidenceScore?: number;
+  evidence?: string[];
+  relatedEvents?: string[];
+  relatedTelemetry?: string[];
+  relatedDependencies?: string[];
 }
 
 export interface KnowledgeGraphEdge {
@@ -379,6 +397,11 @@ export interface RootCauseRecommendation {
   recommendation: string;
   priority: string;
   reason: string;
+  confidenceScore?: number;
+  evidence?: string[];
+  relatedEvents?: string[];
+  relatedTelemetry?: string[];
+  relatedDependencies?: string[];
 }
 
 export interface SelfHealingDashboard {
@@ -453,4 +476,187 @@ export interface ServiceResilienceSummary {
   mostResilientService: string;
   leastResilientService: string;
   averageResilienceScore: number;
+}
+
+export interface HostInventory {
+  id: number;
+  hostName: string;
+  ipAddress: string;
+  os: string;
+  status: 'HEALTHY' | 'WARNING' | 'CRITICAL';
+  cpuCores: number;
+  totalMemoryGb: number;
+  totalDiskGb: number;
+  cpuUsage: number;
+  memoryUsage: number;
+  lastUpdatedAt: string;
+}
+
+export interface ServiceInventory {
+  id: number;
+  serviceName: string;
+  type: string;
+  status: 'HEALTHY' | 'DEGRADED' | 'DOWN';
+  hostName?: string;
+  containerName?: string;
+  lastUpdatedAt: string;
+}
+
+export interface InfrastructureDependency {
+  id: number;
+  sourceName: string;
+  sourceType: string;
+  targetName: string;
+  targetType: string;
+  relationshipType: string;
+  confidenceScore: number;
+  lastUpdatedAt: string;
+}
+
+export interface InfrastructureSummary {
+  totalHosts: number;
+  totalServices: number;
+  totalContainers: number;
+  totalDatabases: number;
+  totalMessageBrokers: number;
+  systemHealthIndex: number;
+}
+
+export interface ChangeEvent {
+  id: number;
+  serviceName: string;
+  changeType: 'DEPLOYMENT' | 'CONFIG_CHANGE' | 'INFRA_CHANGE' | 'RESTART';
+  description: string;
+  changedBy: string;
+  timestamp: string;
+}
+
+export interface BusinessService {
+  id: number;
+  name: string;
+  description: string;
+  owner: string;
+  revenueRiskPerHour: number;
+  healthStatus: 'HEALTHY' | 'DEGRADED' | 'DOWN';
+}
+
+export interface BusinessServiceImpact {
+  totalEstimatedLoss: number;
+  degradedServices: number;
+  downServices: number;
+  impactedDetails: Array<{
+    businessService: string;
+    status: string;
+    revenueLoss: number;
+    owner: string;
+  }>;
+}
+
+export interface DailyBriefing {
+  id: number;
+  date: string;
+  incidentsCount: number;
+  resolvedCount: number;
+  riskScore: number;
+  reliabilityScore: number;
+  remediationSuccessRate: number;
+  highestRiskService: string;
+  briefingText: string;
+}
+
+// ── Narrative Engine ──────────────────────────────────────────────────────────
+
+export interface NarrativeResult {
+  narrative: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT';
+  evidenceSources: string[];
+  ruleMatched: string;
+}
+
+// ── Incident Replay ───────────────────────────────────────────────────────────
+
+export type ReplayPhaseType =
+  | 'DETECTION'
+  | 'CHANGE_EVENT'
+  | 'DEPENDENCY_CASCADE'
+  | 'RCA'
+  | 'BLAST_RADIUS'
+  | 'REMEDIATION'
+  | 'RECOVERY';
+
+export interface ReplayPhase {
+  phase: ReplayPhaseType;
+  title: string;
+  description: string;
+  timestamp: string;
+  evidenceType: string;
+  evidenceDetail: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+}
+
+export interface IncidentReplayTimeline {
+  incidentId: number;
+  serviceName: string;
+  phases: ReplayPhase[];
+}
+
+// ── Operational Memory ────────────────────────────────────────────────────────
+
+export interface SimilarIncident {
+  matchScore: number;
+  incidentId: number;
+  serviceName: string;
+  exceptionType: string;
+  statusCode: number;
+  timestamp: string;
+  matchFactors: string[];
+  hadCorrelatedChange: boolean;
+  estimatedRecoveryPattern: string | null;
+}
+
+// ── Reliability Timeline ──────────────────────────────────────────────────────
+
+export interface TimelineBucket {
+  startTime: string;
+  endTime: string;
+  status: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
+  incidentCount: number;
+}
+
+// ── Service Intelligence ──────────────────────────────────────────────────────
+
+export interface ServiceProfile {
+  serviceName: string;
+  serviceType: string;
+  currentStatus: string;
+  dataAvailability: 'LEARNING' | 'SUFFICIENT' | 'RICH';
+  reliabilityScore: number | null;
+  operationalRiskScore: number | null;
+  incidentCount: number;
+  mttr: string | null;
+  changeFailureRate: number | null;
+  dependencyCount: number;
+  dependencyRiskLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
+  reliabilityTimeline: TimelineBucket[];
+  serviceNarrative: NarrativeResult;
+}
+
+// ── Operations Copilot ────────────────────────────────────────────────────────
+
+export interface CopilotRequest {
+  question: string;
+  serviceName?: string;
+  incidentId?: number;
+}
+
+export interface CopilotActionLink {
+  label: string;
+  route: string;
+}
+
+export interface CopilotResponse {
+  answer: string;
+  confidence: 'DATA_BACKED' | 'PARTIAL' | 'GUIDE_ONLY';
+  dataSources: string[];
+  actionLinks: CopilotActionLink[];
 }

@@ -1,7 +1,39 @@
-import { CardContent, Stack, Typography } from '@mui/material';
+import { Box, CardContent, Skeleton, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 import { GlassCard } from '../common/GlassCard';
+import { ErrorState } from '../feedback/ErrorState';
 
-export function ChartCard({ title, subtitle, children, glow = '#38bdf8' }: { title: string; subtitle?: string; children: ReactNode; glow?: string }) {
-  return <GlassCard glow={glow} sx={{ height: '100%' }}><CardContent sx={{ p: 2.5 }}><Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}><div><Typography variant="h6">{title}</Typography>{subtitle && <Typography variant="body2" color="text.secondary">{subtitle}</Typography>}</div><Typography variant="caption" color="primary.main" fontWeight={900}>LIVE</Typography></Stack>{children}</CardContent></GlassCard>;
+interface ChartCardProps {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  glow?: string;
+  loading?: boolean;
+  error?: boolean;
+  queryKey?: readonly unknown[];
+  height?: number;
+}
+
+export function ChartCard({ title, subtitle, children, glow = '#38bdf8', loading, error, queryKey, height = 320 }: ChartCardProps) {
+  return (
+    <GlassCard glow={glow} sx={{ height: '100%' }}>
+      <CardContent sx={{ p: 2.5 }}>
+        <Typography variant="h6" sx={{ mb: 0.5 }}>{title}</Typography>
+        {subtitle && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+            {subtitle}
+          </Typography>
+        )}
+        <Box sx={{ height }}>
+          {loading ? (
+            <Skeleton variant="rounded" height={height} sx={{ borderRadius: 3, bgcolor: 'rgba(148,163,184,.10)' }} />
+          ) : error ? (
+            <ErrorState queryKey={queryKey} compact />
+          ) : (
+            children
+          )}
+        </Box>
+      </CardContent>
+    </GlassCard>
+  );
 }

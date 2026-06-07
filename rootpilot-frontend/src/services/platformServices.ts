@@ -1,57 +1,244 @@
+/**
+ * platformServices.ts
+ *
+ * Single source of truth for all backend API calls.
+ * Uses getBackend<T> — no mock fallbacks.
+ * On error, throws so React Query surfaces isError and components show ErrorState.
+ *
+ * Endpoint reference: see src/api/endpoints.ts
+ * Type reference: see src/types/backend.ts
+ */
 import { endpoints } from '../api/endpoints';
-import { getOrMock } from './base';
-import * as mock from '../utils/mockData';
-import type { AIOpsDashboard, Alert, AnomalyDetection, AutomationReadiness, AutomationReadinessDashboard, AutonomousAction, AutonomousExecutionPlan, CascadeFailure, DashboardSnapshot, DashboardSummary, DependencyImpact, DependencyRisk, DependencyRiskDashboard, DependencyRiskScore, DependencySummary, FailurePrediction, Incident, KnowledgeGraphSummary, RootCauseRecommendation, SelfHealingDashboard, ServiceDependency, ServiceReliability, ServiceResilience, StringNumberMap, StringObjectMap } from '../types/backend';
+import { getBackend, postBackend } from './base';
+import type {
+  AIOpsDashboard,
+  AIOpsSummary,
+  AIOpsExecutiveSummary,
+  ActionSummary,
+  ActionExecutiveSummary,
+  Alert,
+  AnomalyDetection,
+  AnomalySummary,
+  AnomalyExecutiveSummary,
+  AutomationReadiness,
+  AutomationReadinessDashboard,
+  AutomationReadinessSummary,
+  AutomationReadinessExecutiveSummary,
+  AutonomousAction,
+  AutonomousExecutionPlan,
+  CascadeFailure,
+  DashboardSnapshot,
+  DashboardSummary,
+  DependencyExecutiveSummary,
+  DependencyImpact,
+  DependencyImpactExecutiveSummary,
+  DependencyImpactSummary,
+  DependencyRisk,
+  DependencyRiskDashboard,
+  DependencyRiskScore,
+  DependencySummary,
+  ExecutiveSummary,
+  FailurePrediction,
+  Incident,
+  KnowledgeGraphExecutiveSummary,
+  KnowledgeGraphSummary,
+  OrchestratorDashboard,
+  OrchestratorSummary,
+  OrchestratorExecutiveSummary,
+  PredictionSummary,
+  PredictionExecutiveSummary,
+  RecommendationSummary,
+  ReliabilityExecutiveSummary,
+  ReliabilitySummary,
+  ResilienceDashboard,
+  ResilienceRecommendation,
+  RootCauseRecommendation,
+  SelfHealingDashboard,
+  SelfHealingSummary,
+  SelfHealingExecutiveSummary,
+  ServiceDependency,
+  ServiceReliability,
+  ServiceResilience,
+  ServiceResilienceExecutiveSummary,
+  ServiceResilienceSummary,
+  SpikeDetection,
+  StringNumberMap,
+  StringObjectMap,
+  HostInventory,
+  ServiceInventory,
+  InfrastructureDependency,
+  InfrastructureSummary,
+  ChangeEvent,
+  BusinessService,
+  BusinessServiceImpact,
+  DailyBriefing,
+  NarrativeResult,
+  IncidentReplayTimeline,
+  SimilarIncident,
+  TimelineBucket,
+  ServiceProfile,
+  CopilotRequest,
+  CopilotResponse,
+} from '../types/backend';
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export const dashboardService = {
-  summary: () => getOrMock<DashboardSummary>(endpoints.analysis.dashboard, mock.dashboardSummary),
-  snapshot: () => getOrMock<DashboardSnapshot>(endpoints.analysis.dashboardSnapshot, mock.dashboardSnapshot),
-  hourlyTrend: () => getOrMock<StringObjectMap[]>(endpoints.analysis.hourlyTrend, mock.trend),
-  scoredAlerts: () => getOrMock<Alert[]>(endpoints.analysis.scoredAlerts, mock.alerts),
-  serviceMetrics: () => getOrMock<StringNumberMap>(endpoints.serviceMetrics, Object.fromEntries(mock.reliability.map((s) => [s.serviceName, s.incidentCount]))),
-  exceptionMetrics: () => getOrMock<StringNumberMap>(endpoints.exceptionMetrics, { TimeoutException: 48, NullPointerException: 32, RateLimitException: 21, JwtValidationException: 12 }),
+  summary: () => getBackend<DashboardSummary>(endpoints.analysis.dashboard),
+  snapshot: () => getBackend<DashboardSnapshot>(endpoints.analysis.dashboardSnapshot),
+  hourlyTrend: () => getBackend<StringObjectMap[]>(endpoints.analysis.hourlyTrend),
+  trendSummary: () => getBackend<StringObjectMap>(endpoints.analysis.trendSummary),
+  scoredAlerts: () => getBackend<Alert[]>(endpoints.analysis.scoredAlerts),
+  severity: () => getBackend<{ severity: string; recentIncidents: number; spikeDetected: boolean }>(endpoints.analysis.severity),
+  spikeDetection: () => getBackend<SpikeDetection>(endpoints.analysis.spikeDetection),
+  serviceMetrics: () => getBackend<StringNumberMap>(endpoints.serviceMetrics),
+  exceptionMetrics: () => getBackend<StringNumberMap>(endpoints.exceptionMetrics),
+  executiveSummary: () => getBackend<ExecutiveSummary>(endpoints.analysis.executiveSummary),
 };
+
+// ─── Incidents ────────────────────────────────────────────────────────────────
+
 export const incidentService = {
-  list: () => getOrMock<Incident[]>(endpoints.incidents, mock.mockIncidents),
-  services: () => getOrMock<string[]>(endpoints.services, mock.reliability.map((s) => s.serviceName)),
+  list: () => getBackend<Incident[]>(endpoints.incidents),
+  services: () => getBackend<string[]>(endpoints.services),
+  replay: (id: number) => getBackend<IncidentReplayTimeline>(endpoints.incidentReplay(id)),
+  similar: (id: number) => getBackend<SimilarIncident[]>(endpoints.incidentSimilar(id)),
 };
+
+// ─── Correlations ─────────────────────────────────────────────────────────────
+
 export const correlationService = {
-  correlations: () => getOrMock<StringObjectMap[]>(endpoints.analysis.correlations, mock.recommendations.map((r) => ({ service: r.serviceName, exception: r.exceptionName, incidentCount: r.incidentCount }))),
-  recentCorrelations: () => getOrMock<StringObjectMap[]>(endpoints.analysis.recentCorrelations, mock.recommendations.map((r) => ({ service: r.serviceName, exception: r.exceptionName, incidentCount: Math.round(r.incidentCount / 3) }))),
+  correlations: () => getBackend<StringObjectMap[]>(endpoints.analysis.correlations),
+  recentCorrelations: () => getBackend<StringObjectMap[]>(endpoints.analysis.recentCorrelations),
 };
+
+// ─── Root Cause Analysis ──────────────────────────────────────────────────────
+
 export const rootCauseService = {
-  rcaSummary: () => getOrMock<StringObjectMap>(endpoints.analysis.rcaSummary, { totalIncidents: 128, topService: 'checkout-service', topException: 'TimeoutException', probableRootCause: 'TimeoutException in checkout-service', topCorrelation: { service: 'checkout-service', exception: 'TimeoutException', incidentCount: 48 } }),
-  recommendations: () => getOrMock<RootCauseRecommendation[]>(endpoints.analysis.recommendations, mock.recommendations),
+  rcaSummary: () => getBackend<StringObjectMap>(endpoints.analysis.rcaSummary),
+  recentRcaSummary: () => getBackend<StringObjectMap>(endpoints.analysis.recentRcaSummary),
+  recommendations: () => getBackend<RootCauseRecommendation[]>(endpoints.analysis.recommendations),
+  recommendationSummary: () => getBackend<RecommendationSummary>(endpoints.analysis.recommendationSummary),
 };
+
+// ─── Predictive Analytics ─────────────────────────────────────────────────────
+
 export const predictionService = {
-  predictions: () => getOrMock<FailurePrediction[]>(endpoints.analysis.failurePredictions, mock.predictions),
-  anomalies: () => getOrMock<AnomalyDetection[]>(endpoints.analysis.anomalies, mock.anomalies),
+  predictions: () => getBackend<FailurePrediction[]>(endpoints.analysis.failurePredictions),
+  predictionSummary: () => getBackend<PredictionSummary>(endpoints.analysis.predictionSummary),
+  predictionExecutiveSummary: () => getBackend<PredictionExecutiveSummary>(endpoints.analysis.predictionExecutiveSummary),
+  anomalies: () => getBackend<AnomalyDetection[]>(endpoints.analysis.anomalies),
+  anomalySummary: () => getBackend<AnomalySummary>(endpoints.analysis.anomalySummary),
+  anomalyExecutiveSummary: () => getBackend<AnomalyExecutiveSummary>(endpoints.analysis.anomalyExecutiveSummary),
 };
+
+// ─── Knowledge Graph ──────────────────────────────────────────────────────────
+
 export const knowledgeGraphService = {
-  graph: () => getOrMock<StringObjectMap>(endpoints.analysis.knowledgeGraph, { nodes: mock.reliability.map((r) => ({ nodeId: r.serviceName, nodeType: 'SERVICE', nodeName: r.serviceName, relationshipCount: 3 })), edges: mock.serviceDependencies.map((d) => ({ source: d.sourceService, target: d.targetService, relationshipType: 'DEPENDS_ON', strength: d.dependencyCount * 7 })) }),
-  summary: () => getOrMock<KnowledgeGraphSummary>(endpoints.analysis.knowledgeGraphSummary, mock.knowledgeSummary),
+  graph: () => getBackend<StringObjectMap>(endpoints.analysis.knowledgeGraph),
+  summary: () => getBackend<KnowledgeGraphSummary>(endpoints.analysis.knowledgeGraphSummary),
+  executiveSummary: () => getBackend<KnowledgeGraphExecutiveSummary>(endpoints.analysis.knowledgeGraphExecutiveSummary),
 };
+
+// ─── Dependencies ─────────────────────────────────────────────────────────────
+
 export const dependencyService = {
-  dependencies: () => getOrMock<ServiceDependency[]>(endpoints.analysis.topDependencies, mock.serviceDependencies),
-  summary: () => getOrMock<DependencySummary>(endpoints.analysis.dependencySummary, mock.dependencySummary),
-  risks: () => getOrMock<DependencyRisk[]>(endpoints.analysis.dependencyRisks, mock.dependencyRisks),
-  cascades: () => getOrMock<CascadeFailure[]>(endpoints.analysis.cascadeFailures, mock.cascades),
-  impacts: () => getOrMock<DependencyImpact[]>(endpoints.analysis.dependencyImpacts, mock.dependencyImpacts),
-  riskScores: () => getOrMock<DependencyRiskScore[]>(endpoints.analysis.dependencyRiskScores, mock.dependencyRiskScores),
-  riskDashboard: () => getOrMock<DependencyRiskDashboard>(endpoints.analysis.dependencyRiskDashboard, mock.dependencyRiskDashboard),
+  dependencies: () => getBackend<ServiceDependency[]>(endpoints.analysis.topDependencies),
+  summary: () => getBackend<DependencySummary>(endpoints.analysis.dependencySummary),
+  executiveSummary: () => getBackend<DependencyExecutiveSummary>(endpoints.analysis.dependencyExecutiveSummary),
+  risks: () => getBackend<DependencyRisk[]>(endpoints.analysis.dependencyRisks),
+  cascades: () => getBackend<CascadeFailure[]>(endpoints.analysis.cascadeFailures),
+  impacts: () => getBackend<DependencyImpact[]>(endpoints.analysis.dependencyImpacts),
+  impactSummary: () => getBackend<DependencyImpactSummary>(endpoints.analysis.dependencyImpactSummary),
+  impactExecutiveSummary: () => getBackend<DependencyImpactExecutiveSummary>(endpoints.analysis.dependencyImpactExecutiveSummary),
+  riskScores: () => getBackend<DependencyRiskScore[]>(endpoints.analysis.dependencyRiskScores),
+  riskDashboard: () => getBackend<DependencyRiskDashboard>(endpoints.analysis.dependencyRiskDashboard),
 };
+
+// ─── Service Health ───────────────────────────────────────────────────────────
+
 export const healthService = {
-  reliability: () => getOrMock<ServiceReliability[]>(endpoints.analysis.serviceReliability, mock.reliability),
-  resilience: () => getOrMock<ServiceResilience[]>(endpoints.analysis.serviceResilience, mock.resilience),
+  reliability: () => getBackend<ServiceReliability[]>(endpoints.analysis.serviceReliability),
+  reliabilitySummary: () => getBackend<ReliabilitySummary>(endpoints.analysis.reliabilitySummary),
+  reliabilityExecutiveSummary: () => getBackend<ReliabilityExecutiveSummary>(endpoints.analysis.reliabilityExecutiveSummary),
+  resilience: () => getBackend<ServiceResilience[]>(endpoints.analysis.serviceResilience),
+  resilienceSummary: () => getBackend<ServiceResilienceSummary>(endpoints.analysis.serviceResilienceSummary),
+  resilienceExecutiveSummary: () => getBackend<ServiceResilienceExecutiveSummary>(endpoints.analysis.serviceResilienceExecutiveSummary),
+  resilienceRecommendations: () => getBackend<ResilienceRecommendation[]>(endpoints.analysis.resilienceRecommendations),
+  resilienceDashboard: () => getBackend<ResilienceDashboard>(endpoints.analysis.resilienceDashboard),
 };
+
+// ─── Autonomous Operations ────────────────────────────────────────────────────
+
 export const autonomousService = {
-  actions: () => getOrMock<AutonomousAction[]>(endpoints.analysis.autonomousActions, mock.autonomousActions),
-  executionPlans: () => getOrMock<AutonomousExecutionPlan[]>(endpoints.analysis.autonomousExecutionPlans, mock.executionPlans),
-  readiness: () => getOrMock<AutomationReadiness[]>(endpoints.analysis.automationReadiness, mock.automationReadiness),
-  readinessDashboard: () => getOrMock<AutomationReadinessDashboard>(endpoints.analysis.automationReadinessDashboard, mock.automationDashboard),
-  selfHealing: () => getOrMock<SelfHealingDashboard>(endpoints.analysis.selfHealingDashboard, mock.selfHealingDashboard),
+  actions: () => getBackend<AutonomousAction[]>(endpoints.analysis.autonomousActions),
+  actionSummary: () => getBackend<ActionSummary>(endpoints.analysis.actionSummary),
+  actionExecutiveSummary: () => getBackend<ActionExecutiveSummary>(endpoints.analysis.actionExecutiveSummary),
+  executionPlans: () => getBackend<AutonomousExecutionPlan[]>(endpoints.analysis.autonomousExecutionPlans),
+  orchestratorSummary: () => getBackend<OrchestratorSummary>(endpoints.analysis.orchestratorSummary),
+  orchestratorExecutiveSummary: () => getBackend<OrchestratorExecutiveSummary>(endpoints.analysis.orchestratorExecutiveSummary),
+  orchestratorDashboard: () => getBackend<OrchestratorDashboard>(endpoints.analysis.orchestratorDashboard),
+  readiness: () => getBackend<AutomationReadiness[]>(endpoints.analysis.automationReadiness),
+  readinessSummary: () => getBackend<AutomationReadinessSummary>(endpoints.analysis.automationReadinessSummary),
+  readinessExecutiveSummary: () => getBackend<AutomationReadinessExecutiveSummary>(endpoints.analysis.automationReadinessExecutiveSummary),
+  readinessDashboard: () => getBackend<AutomationReadinessDashboard>(endpoints.analysis.automationReadinessDashboard),
+  selfHealing: () => getBackend<SelfHealingDashboard>(endpoints.analysis.selfHealingDashboard),
+  selfHealingSummary: () => getBackend<SelfHealingSummary>(endpoints.analysis.selfHealingSummary),
+  selfHealingExecutiveSummary: () => getBackend<SelfHealingExecutiveSummary>(endpoints.analysis.selfHealingExecutiveSummary),
 };
+
+// ─── AI Ops Command Center ────────────────────────────────────────────────────
+
 export const commandCenterService = {
-  dashboard: () => getOrMock<AIOpsDashboard>(endpoints.analysis.aiopsDashboard, mock.aiopsDashboard),
-  priorities: () => getOrMock(endpoints.analysis.operationalPriorities, mock.priorities),
+  dashboard: () => getBackend<AIOpsDashboard>(endpoints.analysis.aiopsDashboard),
+  summary: () => getBackend<AIOpsSummary>(endpoints.analysis.aiopsSummary),
+  executiveSummary: () => getBackend<AIOpsExecutiveSummary>(endpoints.analysis.aiopsExecutiveSummary),
+  priorities: () => getBackend<AIOpsDashboard['operationalPriorities']>(endpoints.analysis.operationalPriorities),
+};
+
+// ─── Infrastructure ───────────────────────────────────────────────────────────
+
+export const infrastructureService = {
+  summary: () => getBackend<InfrastructureSummary>(endpoints.infrastructure.summary),
+  hosts: () => getBackend<HostInventory[]>(endpoints.infrastructure.hosts),
+  services: () => getBackend<ServiceInventory[]>(endpoints.infrastructure.services),
+  dependencies: () => getBackend<InfrastructureDependency[]>(endpoints.infrastructure.dependencies),
+  serviceProfiles: () => getBackend<ServiceProfile[]>(endpoints.infrastructure.serviceProfiles),
+  serviceProfile: (name: string) => getBackend<ServiceProfile>(endpoints.infrastructure.serviceProfile(name)),
+};
+
+// ─── Change Intelligence ──────────────────────────────────────────────────────
+
+export const changeService = {
+  recent: (hours?: number) => getBackend<ChangeEvent[]>(`${endpoints.changes.recent}?hours=${hours ?? 24}`),
+  correlations: (incidentId: number) => getBackend<ChangeEvent[]>(endpoints.changes.correlations(incidentId)),
+  narrative: (incidentId: number) => getBackend<NarrativeResult>(endpoints.changes.narrative(incidentId)),
+  serviceNarrative: (serviceName: string) => getBackend<NarrativeResult>(endpoints.changes.serviceNarrative(serviceName)),
+};
+
+// ─── Reliability Timeline ─────────────────────────────────────────────────────
+
+export const timelineService = {
+  get: (period: string, serviceName?: string) =>
+    getBackend<TimelineBucket[]>(endpoints.analysis.reliabilityTimeline(serviceName, period)),
+};
+
+// ─── Business Service Model ───────────────────────────────────────────────────
+
+export const businessServiceService = {
+  list: () => getBackend<BusinessService[]>(endpoints.businessServices.list),
+  impact: () => getBackend<BusinessServiceImpact>(endpoints.businessServices.impact),
+};
+
+// ─── Daily Operational Briefing ───────────────────────────────────────────────
+
+export const briefingService = {
+  today: () => getBackend<DailyBriefing>(endpoints.operationalBriefing.today),
+  metrics: () => getBackend<Record<string, unknown>>(endpoints.operationalBriefing.metrics),
+};
+
+// ─── Operations Copilot ───────────────────────────────────────────────────────
+
+export const copilotService = {
+  ask: (request: CopilotRequest) => postBackend<CopilotResponse>(endpoints.copilot.ask, request),
 };

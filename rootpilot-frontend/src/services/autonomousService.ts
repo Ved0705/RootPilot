@@ -1,1 +1,0 @@
-export { autonomousService } from './platformServices';

@@ -1,1 +1,0 @@
-export { commandCenterService } from './platformServices';
