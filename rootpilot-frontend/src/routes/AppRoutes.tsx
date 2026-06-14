@@ -7,7 +7,6 @@ import { CommandCenterPage } from '../pages/CommandCenterPage';
 import { IncidentsPage } from '../pages/IncidentsPage';
 import { RcaPage } from '../pages/RcaPage';
 import { ServiceCatalogPage } from '../pages/ServiceCatalogPage';
-import { InfrastructurePage } from '../pages/InfrastructurePage';
 import { AutonomousOpsPage } from '../pages/AutonomousOpsPage';
 import { SettingsPage } from '../pages/SettingsPage';
 
@@ -66,15 +65,7 @@ export function AppRoutes() {
           </PrivateRoute>
         }
       />
-      
-      <Route
-        path="/infrastructure"
-        element={
-          <PrivateRoute>
-            <InfrastructurePage />
-          </PrivateRoute>
-        }
-      />
+
       
       <Route
         path="/autonomous"

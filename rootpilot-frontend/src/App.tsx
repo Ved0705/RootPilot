@@ -39,6 +39,10 @@ export function App() {
 
   const activeTheme = useMemo(() => getTheme(mode), [mode]);
 
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', mode);
+  }, [mode]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ColorModeContext.Provider value={colorMode}>

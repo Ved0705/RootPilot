@@ -69,7 +69,7 @@ export const getTheme = (mode: 'light' | 'dark') => {
       button: { textTransform: 'none', fontWeight: 600, fontSize: '0.78rem' },
     },
     shape: {
-      borderRadius: 6, // Softer corners for visual breathing room
+      borderRadius: 8, // Premium softer rounded corners
     },
     components: {
       MuiCard: {
@@ -78,14 +78,22 @@ export const getTheme = (mode: 'light' | 'dark') => {
             backgroundImage: 'none',
             backgroundColor: isLight ? '#FFFFFF' : '#111622',
             border: isLight ? '1px solid #E2E8F0' : '1px solid #242C3F',
-            boxShadow: isLight ? '0 1px 3px 0 rgba(0, 0, 0, 0.05)' : 'none',
+            boxShadow: isLight ? '0 2px 4px rgba(0,0,0,0.02)' : 'none',
+            transition: 'transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.22s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: isLight 
+                ? '0 12px 20px -8px rgba(0, 0, 0, 0.08)' 
+                : '0 12px 24px -10px rgba(0, 0, 0, 0.5)',
+              borderColor: '#3B82F6',
+            },
           },
         },
       },
       MuiCardHeader: {
         styleOverrides: {
           root: {
-            padding: '12px 16px', // Increased padding to separate content
+            padding: '12px 16px',
             borderBottom: isLight ? '1px solid #E2E8F0' : '1px solid #242C3F',
             backgroundColor: isLight ? '#F1F5F9' : '#151C2C',
           },
@@ -101,7 +109,7 @@ export const getTheme = (mode: 'light' | 'dark') => {
       MuiCardContent: {
         styleOverrides: {
           root: {
-            padding: '16px', // More internal card spacing
+            padding: '16px',
             '&:last-child': {
               paddingBottom: '16px',
             },
@@ -115,12 +123,27 @@ export const getTheme = (mode: 'light' | 'dark') => {
         styleOverrides: {
           root: {
             borderRadius: 6,
-            padding: '6px 12px', // Larger buttons for a cleaner interface
+            padding: '5px 12px',
+            transition: 'all 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            textTransform: 'none',
+            fontWeight: 600,
+            '&:active': {
+              transform: 'scale(0.96)',
+            },
           },
           contained: {
             boxShadow: 'none',
             '&:hover': {
-              boxShadow: 'none',
+              boxShadow: isLight 
+                ? '0 4px 10px rgba(59, 130, 246, 0.2)' 
+                : '0 4px 12px rgba(59, 130, 246, 0.35)',
+              filter: 'brightness(1.06)',
+            },
+          },
+          outlined: {
+            '&:hover': {
+              backgroundColor: isLight ? 'rgba(59, 130, 246, 0.04)' : 'rgba(59, 130, 246, 0.08)',
+              borderColor: '#3B82F6',
             },
           },
         },
