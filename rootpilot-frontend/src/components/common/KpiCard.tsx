@@ -1,42 +1,63 @@
-import { Box, CardContent, LinearProgress, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
-import { AnimatedCounter } from './AnimatedCounter';
-import { GlassCard } from './GlassCard';
+import React from 'react';
+import { Card, CardContent, Typography, Box, LinearProgress, Stack } from '@mui/material';
 
-function renderValue(value: ReactNode, suffix?: string, prefix?: string) {
-  return typeof value === 'number' ? <AnimatedCounter value={value} suffix={suffix} prefix={prefix} /> : value;
+interface KpiCardProps {
+  label: string;
+  value: string | number;
+  suffix?: string;
+  helper?: string;
+  icon?: React.ReactNode;
+  progress?: number;
+  accent?: string;
 }
 
-export function KpiCard({ label, value, helper, icon, accent = '#2563EB', progress, suffix, prefix }: { label: string; value: ReactNode; helper?: string; icon?: ReactNode; accent?: string; progress?: number; suffix?: string; prefix?: string }) {
+export function KpiCard({ label, value, suffix = '', helper, icon, progress, accent = '#3B82F6' }: KpiCardProps) {
   return (
-    <GlassCard glow={accent} interactive sx={{ height: '100%' }}>
-      <CardContent sx={{ p: 2.5 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '.08em', fontWeight: 600 }}>{label}</Typography>
-            <Typography variant="h4" sx={{ mt: 0.5, lineHeight: 1, letterSpacing: '-.02em', fontWeight: 700 }}>{renderValue(value, suffix, prefix)}</Typography>
-          </Box>
-          {icon && (
-            <Box sx={{ color: accent, p: 1, borderRadius: 2, bgcolor: `${accent}12`, display: 'grid', placeItems: 'center' }}>
-              {icon}
-            </Box>
+    <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+      {/* Accent strip on top */}
+      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, backgroundColor: accent }} />
+      
+      <CardContent sx={{ p: 2 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1} sx={{ mb: 1 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.06em' }}>
+            {label}
+          </Typography>
+          {icon && <Box sx={{ color: accent, opacity: 0.8, display: 'flex' }}>{icon}</Box>}
+        </Stack>
+
+        <Stack direction="row" alignItems="baseline" spacing={0.5} sx={{ mb: 0.5 }}>
+          <Typography variant="h3" fontWeight={800} sx={{ letterSpacing: '-0.03em', fontFamily: 'var(--font-mono)' }}>
+            {value}
+          </Typography>
+          {suffix && (
+            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+              {suffix}
+            </Typography>
           )}
         </Stack>
-        {helper && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.4, minHeight: 38 }}>{helper}</Typography>}
-        {typeof progress === 'number' && (
+
+        {progress !== undefined && (
           <LinearProgress
             variant="determinate"
-            value={Math.max(0, Math.min(100, progress))}
+            value={progress}
             sx={{
-              mt: 2.2,
-              height: 6,
-              borderRadius: 999,
-              bgcolor: '#F3F4F6',
-              '& .MuiLinearProgress-bar': { borderRadius: 999, bgcolor: accent }
+              height: 4,
+              borderRadius: 1,
+              my: 1.2,
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: accent,
+              },
             }}
           />
         )}
+
+        {helper && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: progress !== undefined ? 0 : 1 }}>
+            {helper}
+          </Typography>
+        )}
       </CardContent>
-    </GlassCard>
+    </Card>
   );
 }

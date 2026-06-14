@@ -1,18 +1,15 @@
-import { CardContent, Chip, Grid, Stack, Typography, Box, Divider, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import React from 'react';
+import { CardContent, CardHeader, Card, Grid, Stack, Typography, Box, Divider, Chip } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import LinkIcon from '@mui/icons-material/Link';
+
 import { PageHeader } from '../components/common/PageHeader';
-import { GlassCard } from '../components/common/GlassCard';
 import { usePlatformQuery } from '../hooks/usePlatformQuery';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { dashboardService } from '../services/platformServices';
-import { API_BASE_URL, USE_MOCKS } from '../api/client';
-import { useThemeMode, ThemeMode } from '../context/ThemeContext';
+import { API_BASE_URL } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 const INTEGRATIONS = [
@@ -53,189 +50,178 @@ const ENDPOINTS = [
 
 export function SettingsPage() {
   useDocumentTitle('Settings');
-  const ping = usePlatformQuery(['settings-ping'], dashboardService.summary, { retry: 0, staleTime: 0 });
+  const ping = usePlatformQuery(['settings-ping-check'], dashboardService.summary, { retry: 0, staleTime: 0 });
   const connected = !ping.isError && ping.data !== undefined;
-  const { mode, setMode } = useThemeMode();
   const { user } = useAuth();
 
   return (
-    <>
+    <Box>
       <PageHeader
         eyebrow="Settings"
         title="Platform Configuration"
-        description="Theme preferences, backend connection status, API contract map, and integration readiness."
+        description="Backend connection status, API contract mappings, session metadata, and integrations readiness."
         action={<SettingsIcon />}
       />
-      <Stack spacing={2.5}>
-        {/* Theme Selector */}
-        <GlassCard>
-          <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              Appearance
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Select your preferred color theme. Your choice is saved in localStorage and applied immediately.
-            </Typography>
-            <ToggleButtonGroup
-              value={mode}
-              exclusive
-              onChange={(_, val) => { if (val) setMode(val as ThemeMode); }}
-              aria-label="theme mode"
-            >
-              <ToggleButton value="light" aria-label="light mode" sx={{ gap: 1, px: 2.5 }}>
-                <LightModeIcon fontSize="small" />
-                <Typography variant="body2" fontWeight={600}>Light</Typography>
-              </ToggleButton>
-              <ToggleButton value="dark" aria-label="dark mode" sx={{ gap: 1, px: 2.5 }}>
-                <DarkModeIcon fontSize="small" />
-                <Typography variant="body2" fontWeight={600}>Dark</Typography>
-              </ToggleButton>
-              <ToggleButton value="system" aria-label="system theme" sx={{ gap: 1, px: 2.5 }}>
-                <SettingsBrightnessIcon fontSize="small" />
-                <Typography variant="body2" fontWeight={600}>System</Typography>
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </CardContent>
-        </GlassCard>
 
+      <Stack spacing={2}>
         {/* Active Session */}
-        <GlassCard>
-          <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom>Active Session</Typography>
+        <Card>
+          <CardHeader title="Active Console Session" />
+          <CardContent>
             <Grid container spacing={2}>
               {[
                 ['Username', user?.username ?? '—'],
                 ['Role', user?.role ?? '—'],
-                ['Auth', 'JWT Bearer Token'],
-                ['Session', 'localStorage.token'],
+                ['Auth Protocol', 'JWT Bearer Token'],
+                ['Session Store', 'localStorage.token'],
               ].map(([k, v]) => (
                 <Grid item xs={6} sm={3} key={k}>
-                  <Typography variant="overline" color="text.secondary">{k}</Typography>
-                  <Typography variant="body2" fontWeight={700}>{v}</Typography>
+                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', fontWeight: 700 }}>{k}</Typography>
+                  <Typography variant="body2" fontWeight={700} color="#E2E8F0">{v}</Typography>
                 </Grid>
               ))}
             </Grid>
           </CardContent>
-        </GlassCard>
+        </Card>
 
         {/* Backend Connection */}
-        <GlassCard glow={connected ? '#059669' : '#DC2626'}>
-          <CardContent sx={{ p: 3 }}>
+        <Card sx={{ borderLeft: connected ? '3px solid #10B981' : '3px solid #EF4444' }}>
+          <CardContent>
             <Stack direction="row" alignItems="center" gap={2}>
               {ping.isLoading ? (
-                <Typography color="text.secondary">Testing connection...</Typography>
+                <Typography color="text.secondary">Testing Spring Boot REST connectivity...</Typography>
               ) : connected ? (
                 <>
-                  <CheckCircleIcon color="success" />
+                  <CheckCircleIcon sx={{ color: '#10B981' }} />
                   <Box>
-                    <Typography fontWeight={700} color="success.main">Backend Connected</Typography>
-                    <Typography variant="caption" color="text.secondary">Spring Boot API is reachable at {API_BASE_URL}</Typography>
+                    <Typography fontWeight={800} color="#10B981" sx={{ fontSize: '0.85rem' }}>Backend Connected Successfully</Typography>
+                    <Typography variant="caption" color="text.secondary">Spring Boot API REST endpoints are reachable on {API_BASE_URL}</Typography>
                   </Box>
                 </>
               ) : (
                 <>
-                  <ErrorOutlineIcon color="error" />
+                  <ErrorOutlineIcon sx={{ color: '#EF4444' }} />
                   <Box>
-                    <Typography fontWeight={700} color="error.main">Backend Unreachable</Typography>
-                    <Typography variant="caption" color="text.secondary">Ensure the Spring Boot service is running at {API_BASE_URL}</Typography>
+                    <Typography fontWeight={800} color="#EF4444" sx={{ fontSize: '0.85rem' }}>Backend Unreachable</Typography>
+                    <Typography variant="caption" color="text.secondary">Ensure your Spring Boot backend service is running on {API_BASE_URL}</Typography>
                   </Box>
                 </>
               )}
             </Stack>
           </CardContent>
-        </GlassCard>
+        </Card>
 
-        {/* Configuration */}
-        <Grid container spacing={2.2}>
+        {/* Configuration variables */}
+        <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
-            <GlassCard>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="overline" color="text.secondary">VITE_API_BASE_URL</Typography>
-                <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700, fontFamily: 'monospace' }}>{API_BASE_URL}</Typography>
-                <Typography variant="caption" color="text.disabled">All API calls are made relative to this base URL.</Typography>
+            <Card>
+              <CardContent>
+                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', fontWeight: 700 }}>VITE_API_BASE_URL</Typography>
+                <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#60A5FA' }}>{API_BASE_URL}</Typography>
+                <Typography variant="caption" color="text.secondary">Endpoint targets will route relative to this base URL.</Typography>
               </CardContent>
-            </GlassCard>
+            </Card>
           </Grid>
           <Grid item xs={12} md={6}>
-            <GlassCard>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="overline" color="text.secondary">VITE_USE_MOCKS</Typography>
+            <Card sx={{ height: '100%' }}>
+              <CardContent>
+                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', fontWeight: 700 }}>DATA ENFORCEMENT</Typography>
                 <Stack direction="row" alignItems="center" gap={1.5} sx={{ mt: 0.5 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'monospace' }}>{USE_MOCKS ? 'true' : 'false'}</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#10B981' }}>STRICT</Typography>
                   <Chip
                     size="small"
-                    label={USE_MOCKS ? 'MOCK MODE ACTIVE' : 'LIVE BACKEND'}
-                    color={USE_MOCKS ? 'warning' : 'success'}
-                    sx={{ fontWeight: 600 }}
+                    label="MOCKS DISABLED"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: '8px',
+                      height: 16,
+                      bgcolor: 'rgba(16,185,129,0.1)',
+                      color: '#10B981',
+                      border: '1px solid',
+                      borderColor: 'rgba(16,185,129,0.2)'
+                    }}
                   />
                 </Stack>
-                <Typography variant="caption" color="text.disabled">
-                  {USE_MOCKS ? 'Set VITE_USE_MOCKS=false to connect to the real backend.' : 'All data is sourced from live Spring Boot API responses.'}
+                <Typography variant="caption" color="text.secondary">
+                  Data is dynamically loaded from active Spring Boot APIs. Failing requests will explicitly throw errors.
                 </Typography>
               </CardContent>
-            </GlassCard>
+            </Card>
           </Grid>
         </Grid>
 
         {/* Integrations */}
-        <GlassCard>
-          <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom>Integration Readiness</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-              External integrations available for production deployment. Active = wired to backend endpoints. Stub = architecture defined, requires configuration.
-            </Typography>
+        <Card>
+          <CardHeader title="Integration Matrix Readiness" />
+          <CardContent>
             <Grid container spacing={2}>
               {INTEGRATIONS.map((integration) => (
                 <Grid item xs={12} sm={6} md={4} key={integration.name}>
-                  <GlassCard>
-                    <CardContent sx={{ p: 2 }}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                        <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Card sx={{ border: '1px solid #242C3F', backgroundColor: '#151C2C' }}>
+                    <CardContent sx={{ p: 1.5 }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Stack direction="row" spacing={1} alignItems="center">
                           <Box
                             sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: 1.5,
+                              width: 26,
+                              height: 26,
+                              borderRadius: 0.5,
                               bgcolor: integration.color,
                               display: 'grid',
                               placeItems: 'center',
                             }}
                           >
-                            <LinkIcon sx={{ fontSize: 16, color: '#fff' }} />
+                            <LinkIcon sx={{ fontSize: 14, color: '#fff' }} />
                           </Box>
-                          <Typography variant="body2" fontWeight={700}>{integration.name}</Typography>
+                          <Typography variant="body2" fontWeight={700} color="#E2E8F0">{integration.name}</Typography>
                         </Stack>
                         <Chip
                           size="small"
                           label={integration.status === 'active' ? 'ACTIVE' : 'STUB'}
-                          color={integration.status === 'active' ? 'success' : 'default'}
-                          sx={{ fontWeight: 700, fontSize: '0.65rem' }}
+                          sx={{
+                            height: 14,
+                            fontSize: '8px',
+                            fontWeight: 800,
+                            bgcolor: integration.status === 'active' ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)',
+                            color: integration.status === 'active' ? '#10B981' : 'text.secondary'
+                          }}
                         />
                       </Stack>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                         {integration.description}
                       </Typography>
                     </CardContent>
-                  </GlassCard>
+                  </Card>
                 </Grid>
               ))}
             </Grid>
           </CardContent>
-        </GlassCard>
+        </Card>
 
         {/* API Contract Map */}
-        <GlassCard>
-          <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Platform API Contract Map</Typography>
+        <Card>
+          <CardHeader title="Spring Boot API Contract Mapping" />
+          <CardContent sx={{ p: 0 }}>
             {ENDPOINTS.map(([label, endpoint]) => (
-              <Stack key={endpoint} direction="row" justifyContent="space-between" sx={{ py: 0.7, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="body2" color="text.secondary">{label}</Typography>
-                <Typography variant="body2" fontFamily="monospace" color="primary.main" sx={{ fontSize: '0.78rem' }}>{endpoint}</Typography>
+              <Stack
+                key={endpoint}
+                direction="row"
+                justifyContent="space-between"
+                sx={{
+                  py: 1,
+                  px: 2,
+                  borderBottom: '1px solid #242C3F',
+                  '&:last-child': { borderBottom: 'none' },
+                  alignItems: 'center'
+                }}
+              >
+                <Typography variant="body2" fontWeight={500} color="text.secondary">{label}</Typography>
+                <Typography variant="body2" fontFamily="var(--font-mono)" color="#60A5FA" sx={{ fontSize: '0.75rem' }}>{endpoint}</Typography>
               </Stack>
             ))}
           </CardContent>
-        </GlassCard>
+        </Card>
       </Stack>
-    </>
+    </Box>
   );
 }

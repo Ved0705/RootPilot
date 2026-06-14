@@ -1,254 +1,398 @@
-import { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Box, CardContent, Drawer, Grid, InputAdornment, MenuItem, Select, Stack,
-  Table, TableBody, TableCell, TableHead, TablePagination, TableRow,
-  TextField, Typography, Button, Divider,
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Stack,
+  Chip,
+  Drawer,
+  IconButton,
+  Button,
+  Divider,
+  CircularProgress,
+  Grid,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import CloseIcon from '@mui/icons-material/Close';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import WarningIcon from '@mui/icons-material/Warning';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CrisisAlertIcon from '@mui/icons-material/CrisisAlert';
+
 import { PageHeader } from '../components/common/PageHeader';
-import { usePlatformQuery } from '../hooks/usePlatformQuery';
-import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { incidentService, rootCauseService, changeService } from '../services/platformServices';
-import type { Incident } from '../types/backend';
 import { StatusPill } from '../components/common/StatusPill';
-import { GlassCard } from '../components/common/GlassCard';
-import { IncidentTimeline } from '../components/visual/IncidentTimeline';
+import { useUiStore } from '../store/uiStore';
+import { usePlatformQuery } from '../hooks/usePlatformQuery';
+import { incidentService, changeService } from '../services/platformServices';
 import { LoadingState } from '../components/feedback/LoadingState';
 import { ErrorState } from '../components/feedback/ErrorState';
 import { EmptyState } from '../components/feedback/EmptyState';
-import { OperationalMemoryPanel } from '../components/ai/OperationalMemoryPanel';
-import { NarrativeBanner } from '../components/ai/NarrativeBanner';
-
-/** Derive a severity label from the HTTP status code. */
-function deriveSeverity(statusCode: number): string {
-  if (statusCode >= 500) return 'HIGH';
-  if (statusCode >= 400) return 'MEDIUM';
-  return 'LOW';
-}
-
-/** Loads and renders Operational Memory (similar incidents) for a given incident. */
-function IncidentSimilarPanel({ incidentId, onNavigate }: { incidentId: number; onNavigate?: (id: number) => void }) {
-  const { data: similar = [], isLoading } = useQuery({
-    queryKey: ['incident-similar', incidentId],
-    queryFn: () => incidentService.similar(incidentId),
-    enabled: incidentId > 0,
-    staleTime: 120_000,
-  });
-  return <OperationalMemoryPanel incidents={similar} isLoading={isLoading} onNavigate={onNavigate} />;
-}
+import type { Incident } from '../types/backend';
 
 export function IncidentsPage() {
-  useDocumentTitle('Incidents');
-  const navigate = useNavigate();
-  const { data = [], isLoading, isError } = usePlatformQuery(['incidents'], incidentService.list);
-  const rca = usePlatformQuery(['rca-recommendations'], rootCauseService.recommendations);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | '5XX' | '4XX'>('ALL');
+  
+  const { openCopilot } = useUiStore();
 
+  // Load incidents list
+  const incidentsQuery = usePlatformQuery(['incidents-list'], incidentService.list);
 
-  const [query, setQuery] = useState('');
-  const [service, setService] = useState('ALL');
-  const [page, setPage] = useState(0);
-  const [selected, setSelected] = useState<Incident | null>(null);
-
-  const services = useMemo(() => ['ALL', ...Array.from(new Set(data.map((i) => i.serviceName)))], [data]);
-
-  const filtered = useMemo(
-    () =>
-      data.filter(
-        (i) =>
-          (service === 'ALL' || i.serviceName === service) &&
-          JSON.stringify(i).toLowerCase().includes(query.toLowerCase()),
-      ),
-    [data, query, service],
+  // Queries for the selected incident detail drawer
+  const replayQuery = usePlatformQuery(
+    ['incident-replay', selectedIncident?.id],
+    () => incidentService.replay(selectedIncident!.id),
+    { enabled: !!selectedIncident }
   );
 
-  if (isLoading) return <LoadingState cards={3} />;
-  if (isError) {
-    return (
-      <ErrorState
-        queryKey={['incidents']}
-        title="Incidents Unavailable"
-        description="Unable to load incident data. Verify the platform backend is running and reachable."
-      />
-    );
+  const similarQuery = usePlatformQuery(
+    ['incident-similar', selectedIncident?.id],
+    () => incidentService.similar(selectedIncident!.id),
+    { enabled: !!selectedIncident }
+  );
+
+  const narrativeQuery = usePlatformQuery(
+    ['incident-narrative', selectedIncident?.id],
+    () => changeService.narrative(selectedIncident!.id),
+    { enabled: !!selectedIncident }
+  );
+
+  if (incidentsQuery.isLoading) return <LoadingState cards={2} />;
+  if (incidentsQuery.isError) {
+    return <ErrorState title="Incident Service Offline" refetch={() => incidentsQuery.refetch()} />;
   }
 
-  const selectedRcas = rca.data?.filter((r) => r.serviceName === selected?.serviceName) ?? [];
+  const incidents = incidentsQuery.data || [];
+
+  // Filter list
+  const filteredIncidents = incidents.filter((inc) => {
+    if (statusFilter === '5XX') return inc.statusCode >= 500;
+    if (statusFilter === '4XX') return inc.statusCode >= 400 && inc.statusCode < 500;
+    return true;
+  });
+
+  const getSeverity = (statusCode: number) => {
+    return statusCode >= 500 ? 'CRITICAL' : 'WARNING';
+  };
 
   return (
-    <>
+    <Box>
       <PageHeader
-        eyebrow="Incident Management"
-        title="Enterprise Incident Explorer"
-        description="Search, filter, and investigate every incident across your platform — with AI-powered root cause evidence attached."
-        action={<StatusPill value={`${filtered.length} MATCHES`} />}
+        eyebrow="Triage queue"
+        title="Incident Management"
+        description="Real-time incident response. Triage active status exceptions, explore cascades, and consult Copilot."
       />
 
-      <GlassCard glow="#2563EB">
-        <CardContent sx={{ p: 2.5 }}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2.5 }}>
-            <TextField
-              fullWidth
-              placeholder="Search incidents, exceptions, endpoints..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }}
-            />
-            <Select
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-              sx={{ minWidth: 220 }}
-            >
-              {services.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-            </Select>
-          </Stack>
+      <Stack spacing={2}>
+        {/* Filters */}
+        <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+          <Button
+            size="small"
+            variant={statusFilter === 'ALL' ? 'contained' : 'outlined'}
+            onClick={() => setStatusFilter('ALL')}
+            sx={{ borderColor: '#242C3F', fontSize: '11px' }}
+          >
+            All Incidents ({incidents.length})
+          </Button>
+          <Button
+            size="small"
+            variant={statusFilter === '5XX' ? 'contained' : 'outlined'}
+            color="error"
+            onClick={() => setStatusFilter('5XX')}
+            sx={{ fontSize: '11px' }}
+          >
+            5xx Server Errors ({incidents.filter((i) => i.statusCode >= 500).length})
+          </Button>
+          <Button
+            size="small"
+            variant={statusFilter === '4XX' ? 'contained' : 'outlined'}
+            color="warning"
+            onClick={() => setStatusFilter('4XX')}
+            sx={{ fontSize: '11px' }}
+          >
+            4xx Client Errors ({incidents.filter((i) => i.statusCode >= 400 && i.statusCode < 500).length})
+          </Button>
+        </Stack>
 
-          {filtered.length === 0 ? (
-            <EmptyState title="No Matching Incidents" description="Adjust your search or filter criteria." compact />
-          ) : (
-            <>
-              <Table>
+        {/* Incidents Table */}
+        <Card>
+          <CardContent sx={{ p: 0 }}>
+            {filteredIncidents.length > 0 ? (
+              <Table className="compact-table">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Incident ID</TableCell>
-                    <TableCell>Service</TableCell>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Service Name</TableCell>
+                    <TableCell>Endpoint</TableCell>
+                    <TableCell>Status</TableCell>
                     <TableCell>Severity</TableCell>
-                    <TableCell>Status Code</TableCell>
                     <TableCell>Latency</TableCell>
                     <TableCell>Exception</TableCell>
                     <TableCell>Timestamp</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filtered.slice(page * 8, page * 8 + 8).map((i) => (
+                  {filteredIncidents.map((inc) => (
                     <TableRow
-                      key={i.id}
-                      hover
-                      onClick={() => setSelected(i)}
-                      sx={{ cursor: 'pointer', '&:hover': { bgcolor: '#F3F4F6' } }}
+                      key={inc.id}
+                      onClick={() => setSelectedIncident(inc)}
+                      selected={selectedIncident?.id === inc.id}
+                      sx={{
+                        cursor: 'pointer',
+                        backgroundColor: selectedIncident?.id === inc.id ? 'rgba(59, 130, 246, 0.05)' : 'inherit',
+                      }}
                     >
-                      <TableCell><Typography fontWeight={700}>#{i.id}</Typography></TableCell>
-                      <TableCell>{i.serviceName}</TableCell>
-                      <TableCell><StatusPill value={deriveSeverity(i.statusCode)} /></TableCell>
-                      <TableCell>{i.statusCode}</TableCell>
-                      <TableCell>{i.latency}ms</TableCell>
-                      <TableCell>{i.exceptionType}</TableCell>
-                      <TableCell>{new Date(i.timestamp).toLocaleString()}</TableCell>
+                      <TableCell sx={{ fontFamily: 'var(--font-mono)', color: '#60A5FA', fontWeight: 650 }}>
+                        #{inc.id}
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#E2E8F0' }}>{inc.serviceName}</TableCell>
+                      <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>{inc.endpoint}</TableCell>
+                      <TableCell sx={{ fontFamily: 'var(--font-mono)' }}>{inc.statusCode}</TableCell>
+                      <TableCell>
+                        <StatusPill value={getSeverity(inc.statusCode)} />
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: 'var(--font-mono)' }}>{inc.latency}ms</TableCell>
+                      <TableCell sx={{ color: '#FCA5A5', fontWeight: 500 }}>{inc.exceptionType}</TableCell>
+                      <TableCell sx={{ fontSize: '11px', color: 'text.secondary' }}>
+                        {new Date(inc.timestamp).toLocaleString()}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              <TablePagination
-                component="div"
-                count={filtered.length}
-                page={page}
-                onPageChange={(_, p) => setPage(p)}
-                rowsPerPage={8}
-                rowsPerPageOptions={[8]}
-              />
-            </>
-          )}
-        </CardContent>
-      </GlassCard>
+            ) : (
+              <EmptyState title="No active incidents" description="No telemetry anomalies match the current search filters." />
+            )}
+          </CardContent>
+        </Card>
+      </Stack>
 
-      {/* Incident Detail Drawer */}
+      {/* Incident Detail Slide-over Drawer */}
       <Drawer
         anchor="right"
-        open={Boolean(selected)}
-        onClose={() => setSelected(null)}
+        open={!!selectedIncident}
+        onClose={() => setSelectedIncident(null)}
         PaperProps={{
-          sx: { width: { xs: '100%', md: 560 }, bgcolor: 'background.paper', p: 3, borderLeft: '1px solid', borderColor: 'divider' },
+          sx: {
+            width: { xs: '100%', md: 540 },
+            backgroundColor: '#0F121C',
+            borderLeft: '1px solid #242C3F',
+            p: 0,
+          },
         }}
       >
-        {selected && (
-          <Box>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-              <Box>
-                <Typography variant="h4" fontWeight={700}>Incident #{selected.id}</Typography>
-                <Typography color="text.secondary" variant="body2">{selected.serviceName} · {selected.endpoint}</Typography>
-              </Box>
-              <Stack spacing={1} alignItems="flex-end">
-                <StatusPill value={deriveSeverity(selected.statusCode)} />
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<PlayArrowIcon />}
-                  onClick={() => navigate(`/incidents/${selected.id}/replay`)}
-                  id={`incident-replay-btn-${selected.id}`}
-                  aria-label={`Replay incident ${selected.id}`}
-                >
-                  Replay
-                </Button>
+        {selectedIncident && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
+            {/* Drawer Header */}
+            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #242C3F', backgroundColor: '#151C2C' }}>
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Typography variant="h4" sx={{ fontSize: '0.9rem', color: '#F1F5F9', fontWeight: 700 }}>
+                  Incident #{selectedIncident.id} Triage
+                </Typography>
+                <Chip label={`v${selectedIncident.version}`} size="small" sx={{ height: 16, fontSize: '9px', bgcolor: '#2E394E' }} />
               </Stack>
-            </Stack>
+              <IconButton size="small" onClick={() => setSelectedIncident(null)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
 
-            <Grid container spacing={2} sx={{ mt: 2 }}>
-              {[
-                ['Status Code', selected.statusCode],
-                ['Latency', `${selected.latency}ms`],
-                ['Exception', selected.exceptionType],
-                ['Version', selected.version],
-              ].map(([k, v]) => (
-                <Grid item xs={6} key={k}>
-                  <GlassCard glow="#2563EB">
-                    <CardContent>
-                      <Typography variant="overline" color="text.secondary">{k}</Typography>
-                      <Typography variant="h6" fontWeight={700}>{v}</Typography>
-                    </CardContent>
-                  </GlassCard>
-                </Grid>
-              ))}
-            </Grid>
+            <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              {/* Telemetry Snapshot Card */}
+              <Card sx={{ border: '1px solid #242C3F', backgroundColor: '#111622' }}>
+                <CardContent sx={{ p: 1.5 }}>
+                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem', fontWeight: 700 }}>
+                    Telemetry Snapshot
+                  </Typography>
+                  <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">Service Name</Typography>
+                      <Typography variant="body2" fontWeight={700} color="#E2E8F0">{selectedIncident.serviceName}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">HTTP Status</Typography>
+                      <Typography variant="body2" fontWeight={750} sx={{ fontFamily: 'var(--font-mono)', color: selectedIncident.statusCode >= 500 ? '#EF4444' : '#F59E0B' }}>
+                        {selectedIncident.statusCode}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">API Endpoint</Typography>
+                      <Typography variant="body2" sx={{ fontFamily: 'var(--font-mono)', fontSize: '10px' }}>{selectedIncident.endpoint}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">Latency Response</Typography>
+                      <Typography variant="body2" sx={{ fontFamily: 'var(--font-mono)' }}>{selectedIncident.latency}ms</Typography>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
 
-            {/* RCA Evidence — from real backend, not hardcoded */}
-            <Typography variant="h6" sx={{ mt: 3, fontWeight: 700 }}>Root Cause Evidence</Typography>
-            {selectedRcas.length === 0 ? (
-              <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
-                {rca.isError
-                  ? 'Could not load RCA recommendations.'
-                  : 'No RCA recommendations for this service in the current window.'}
-              </Typography>
-            ) : (
-              selectedRcas.map((r) => (
-                <GlassCard glow="#DC2626" sx={{ mt: 1 }} key={r.recommendation}>
-                  <CardContent>
-                    <StatusPill value={r.riskLevel} />
-                    <Typography sx={{ mt: 1 }} fontWeight={700}>{r.recommendation}</Typography>
-                    <Typography color="text.secondary" variant="body2">{r.reason}</Typography>
-                  </CardContent>
-                </GlassCard>
-              ))
-            )}
+              {/* Contextual Copilot Insight Block */}
+              <Card sx={{ border: '1px solid rgba(59, 130, 246, 0.2)', backgroundColor: 'rgba(59, 130, 246, 0.03)' }}>
+                <CardContent sx={{ p: 1.5 }}>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                    <SmartToyIcon color="primary" sx={{ fontSize: 16 }} />
+                    <Typography variant="subtitle2" fontWeight={800} color="#60A5FA">
+                      Copilot Automated Narrative
+                    </Typography>
+                  </Stack>
+                  
+                  {narrativeQuery.isLoading ? (
+                    <Box sx={{ py: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={12} />
+                      <Typography variant="caption" color="text.secondary">Fetching narrative engine details...</Typography>
+                    </Box>
+                  ) : narrativeQuery.data ? (
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#F1F5F9', mb: 1.5 }}>
+                        {narrativeQuery.data.narrative}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography variant="caption" color="text.secondary">
+                          Confidence:
+                        </Typography>
+                        <Chip
+                          label={narrativeQuery.data.confidence}
+                          size="small"
+                          sx={{
+                            height: 14,
+                            fontSize: '8px',
+                            fontWeight: 700,
+                            bgcolor: narrativeQuery.data.confidence === 'HIGH' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                            color: narrativeQuery.data.confidence === 'HIGH' ? '#10B981' : '#F59E0B',
+                          }}
+                        />
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => openCopilot({
+                            type: 'incident',
+                            id: selectedIncident.id,
+                            name: selectedIncident.exceptionType
+                          })}
+                          sx={{ ml: 'auto', fontSize: '10px', py: 0.1, px: 0.5, borderColor: '#242C3F' }}
+                        >
+                          Ask Copilot about resolution
+                        </Button>
+                      </Stack>
+                    </Box>
+                  ) : (
+                    <Typography variant="caption" color="text.secondary">Narrative resolution unavailable.</Typography>
+                  )}
+                </CardContent>
+              </Card>
 
-            <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>Incident Timeline</Typography>
-            <IncidentTimeline
-              steps={[
-                {
-                  title: 'Detected',
-                  description: `${selected.exceptionType} captured on ${selected.endpoint}`,
-                  time: selected.timestamp,
-                },
-                {
-                  title: 'Correlated',
-                  description: 'RootPilot matched service, exception, and latency signals.',
-                },
-                {
-                  title: 'RCA Queried',
-                  description: selectedRcas.length > 0
-                    ? `${selectedRcas.length} recommendation(s) found for ${selected.serviceName}.`
-                    : 'No RCA match found in the current recommendation window.',
-                },
-              ]}
-            />
+              {/* Incident Timeline Replay */}
+              <Box>
+                <Typography variant="subtitle2" fontWeight={750} sx={{ textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.04em', color: 'text.secondary', mb: 1.5 }}>
+                  Incident Replay Timeline
+                </Typography>
+                
+                {replayQuery.isLoading ? (
+                  <CircularProgress size={16} sx={{ my: 1 }} />
+                ) : replayQuery.data?.phases ? (
+                  <Stack spacing={1.5} sx={{ pl: 1, borderLeft: '1px solid #242C3F', ml: 1 }}>
+                    {replayQuery.data.phases.map((phase, idx) => (
+                      <Box key={idx} sx={{ position: 'relative', pl: 1.5 }}>
+                        {/* Dot indicator */}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            left: -18,
+                            top: 4,
+                            width: 7,
+                            height: 7,
+                            borderRadius: '50%',
+                            backgroundColor: phase.severity === 'CRITICAL' ? '#EF4444' : phase.severity === 'WARNING' ? '#F59E0B' : '#3B82F6',
+                            border: '2px solid #0F121C',
+                          }}
+                        />
+                        <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.25 }}>
+                          <Typography variant="body2" fontWeight={700} sx={{ color: '#E2E8F0' }}>
+                            {phase.title}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(phase.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </Typography>
+                        </Stack>
+                        <Typography variant="body2" sx={{ fontSize: '11px', color: 'text.secondary', mb: 0.5 }}>
+                          {phase.description}
+                        </Typography>
+                        {phase.evidenceDetail && (
+                          <Chip
+                            label={`${phase.evidenceType}: ${phase.evidenceDetail}`}
+                            size="small"
+                            sx={{ height: 14, fontSize: '8px', bgcolor: '#1A2333', border: '1px solid #242C3F' }}
+                          />
+                        )}
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="caption" color="text.secondary">Replay timeline unavailable.</Typography>
+                )}
+              </Box>
 
-            {/* Operational Memory — Similar Past Incidents */}
-            <Divider sx={{ my: 2 }} />
-            <IncidentSimilarPanel incidentId={selected.id} onNavigate={(id) => { setSelected(null); navigate(`/incidents/${id}/replay`); }} />
+              <Divider />
+
+              {/* Similar Incidents */}
+              <Box>
+                <Typography variant="subtitle2" fontWeight={750} sx={{ textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.04em', color: 'text.secondary', mb: 1.5 }}>
+                  Similar Past Incidents (Operational Memory)
+                </Typography>
+
+                {similarQuery.isLoading ? (
+                  <CircularProgress size={16} />
+                ) : similarQuery.data && similarQuery.data.length > 0 ? (
+                  <Stack spacing={1}>
+                    {similarQuery.data.map((sim, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          p: 1.2,
+                          backgroundColor: '#111622',
+                          border: '1px solid #242C3F',
+                          borderRadius: 0.5,
+                        }}
+                      >
+                        <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                          <Typography variant="body2" fontWeight={700} color="#60A5FA">
+                            Incident #{sim.incidentId}
+                          </Typography>
+                          <Typography variant="caption" fontWeight={700} color="#10B981">
+                            {Math.round(sim.matchScore * 100)}% Similarity Match
+                          </Typography>
+                        </Stack>
+                        <Typography variant="body2" sx={{ fontSize: '11px', mb: 0.75, color: '#E2E8F0' }}>
+                          {sim.serviceName} • {sim.exceptionType} (Status {sim.statusCode})
+                        </Typography>
+                        
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ gap: 0.5 }}>
+                          {sim.matchFactors.map((fact, fIdx) => (
+                            <Chip key={fIdx} label={fact} size="small" sx={{ height: 12, fontSize: '7px', bgcolor: 'rgba(59,130,246,0.08)' }} />
+                          ))}
+                        </Stack>
+
+                        {sim.estimatedRecoveryPattern && (
+                          <Typography variant="caption" sx={{ color: '#FBBF24', display: 'block', mt: 1, fontWeight: 600 }}>
+                            Pattern: {sim.estimatedRecoveryPattern}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="caption" color="text.secondary">No matching historical incidents found.</Typography>
+                )}
+              </Box>
+            </Box>
           </Box>
         )}
       </Drawer>
-    </>
+    </Box>
   );
 }

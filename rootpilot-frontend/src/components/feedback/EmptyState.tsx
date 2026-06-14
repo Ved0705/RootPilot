@@ -1,65 +1,44 @@
-import { Box, Button, Typography, alpha } from '@mui/material';
+import React from 'react';
+import { Box, Typography, Stack } from '@mui/material';
 import InboxIcon from '@mui/icons-material/Inbox';
-import type { ReactNode } from 'react';
 
 interface EmptyStateProps {
-  icon?: ReactNode;
-  title?: string;
-  description?: string;
-  action?: ReactNode;
+  title: string;
+  description: string;
   compact?: boolean;
   accentColor?: string;
 }
 
-export function EmptyState({
-  icon,
-  title = 'No Data Available',
-  description = 'No activity has been detected yet. Data will appear here as your platform runs.',
-  action,
-  compact = false,
-  accentColor = '#6366F1',
-}: EmptyStateProps) {
+export function EmptyState({ title, description, compact = false, accentColor = '#64748B' }: EmptyStateProps) {
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: compact ? 0.75 : 1.5,
-        py: compact ? 3 : 7,
-        px: 3,
-        color: 'text.secondary',
+        py: compact ? 3 : 6,
+        px: 2,
+        display: 'grid',
+        placeItems: 'center',
         textAlign: 'center',
+        width: '100%',
+        backgroundColor: compact ? 'transparent' : 'rgba(255, 255, 255, 0.01)',
+        border: compact ? 'none' : '1px dashed #242C3F',
+        borderRadius: 1,
       }}
     >
-      <Box
-        sx={{
-          width: compact ? 48 : 72,
-          height: compact ? 48 : 72,
-          borderRadius: '50%',
-          bgcolor: alpha(accentColor, 0.08),
-          display: 'grid',
-          placeItems: 'center',
-          mb: compact ? 0 : 0.5,
-          color: alpha(accentColor, 0.5),
-        }}
-      >
-        {icon ?? <InboxIcon sx={{ fontSize: compact ? 22 : 34 }} />}
-      </Box>
-      <Typography variant={compact ? 'body2' : 'body1'} fontWeight={700} color="text.secondary">
-        {title}
-      </Typography>
-      {description && (
-        <Typography
-          variant="caption"
-          color="text.disabled"
-          sx={{ maxWidth: 380, lineHeight: 1.6, fontSize: compact ? '0.7rem' : '0.8rem' }}
-        >
-          {description}
-        </Typography>
-      )}
-      {action && !compact && <Box sx={{ mt: 1 }}>{action}</Box>}
+      <Stack spacing={1.5} alignItems="center">
+        {!compact && (
+          <Box sx={{ color: accentColor, opacity: 0.6 }}>
+            <InboxIcon sx={{ fontSize: 32 }} />
+          </Box>
+        )}
+        <Box>
+          <Typography variant={compact ? "subtitle2" : "h5"} color="text.primary" sx={{ mb: 0.5 }}>
+            {title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 280, fontSize: compact ? '11px' : '12px' }}>
+            {description}
+          </Typography>
+        </Box>
+      </Stack>
     </Box>
   );
 }

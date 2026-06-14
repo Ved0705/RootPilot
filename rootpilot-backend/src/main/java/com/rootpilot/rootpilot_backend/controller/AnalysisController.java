@@ -18,6 +18,7 @@ import java.util.Map;
 public class AnalysisController {
 
     private final IncidentService incidentService;
+    private final ResilienceIntelligenceService resilienceIntelligenceService;
     private final AutomationReadinessService automationReadinessService;
     private final OrchestratorService orchestratorService;
     private final AIOpsCommandCenterService aiOpsCommandCenterService;
@@ -358,15 +359,14 @@ public class AnalysisController {
         return incidentService
                 .getKnowledgeGraphExecutiveSummary();
     }
-    private final ResilienceIntelligenceService resilienceIntelligenceService;
-    @GetMapping("/analysis/service-resilience")
+    @GetMapping("/service-resilience")
     public List<ServiceResilience> getServiceResilience() {
 
         return resilienceIntelligenceService
                 .getServiceResilience();
     }
 
-    @GetMapping("/analysis/service-resilience-summary")
+    @GetMapping("/service-resilience-summary")
     public ServiceResilienceSummary
     getServiceResilienceSummary() {
 
@@ -374,7 +374,7 @@ public class AnalysisController {
                 .getServiceResilienceSummary();
     }
 
-    @GetMapping("/analysis/service-resilience-executive-summary")
+    @GetMapping("/service-resilience-executive-summary")
     public ServiceResilienceExecutiveSummary
     getServiceResilienceExecutiveSummary() {
 
@@ -382,7 +382,7 @@ public class AnalysisController {
                 .getServiceResilienceExecutiveSummary();
     }
 
-    @GetMapping("/analysis/resilience-recommendations")
+    @GetMapping("/resilience-recommendations")
     public List<ResilienceRecommendation>
     getResilienceRecommendations() {
 
@@ -390,7 +390,7 @@ public class AnalysisController {
                 .getResilienceRecommendations();
     }
 
-    @GetMapping("/analysis/resilience-dashboard")
+    @GetMapping("/resilience-dashboard")
     public ResilienceDashboard
     getResilienceDashboard() {
 

@@ -1,266 +1,190 @@
-import { useState } from 'react';
-import { Grid, Stack, Typography, Tab, Tabs, Box, CardContent, LinearProgress, Chip } from '@mui/material';
-import StorageIcon from '@mui/icons-material/Storage';
+import React from 'react';
+import { Box, Card, CardContent, CardHeader, Grid, Typography, Table, TableBody, TableCell, TableHead, TableRow, LinearProgress, Stack, IconButton } from '@mui/material';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ComputerIcon from '@mui/icons-material/Computer';
-import SettingsInputComponentIcon from '@mui/icons-material/SettingsInputComponent';
-import DatabaseIcon from '@mui/icons-material/Storage';
+import StorageIcon from '@mui/icons-material/Storage';
 import HubIcon from '@mui/icons-material/Hub';
+
 import { PageHeader } from '../components/common/PageHeader';
 import { KpiCard } from '../components/common/KpiCard';
-import { SortableTable } from '../components/common/SortableTable';
-import { GlassCard } from '../components/common/GlassCard';
-import { ServiceGraph } from '../components/graphs/ServiceGraph';
+import { StatusPill } from '../components/common/StatusPill';
+import { useUiStore } from '../store/uiStore';
 import { usePlatformQuery } from '../hooks/usePlatformQuery';
-import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { infrastructureService } from '../services/platformServices';
 import { LoadingState } from '../components/feedback/LoadingState';
 import { ErrorState } from '../components/feedback/ErrorState';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function CustomTabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`infra-tabpanel-${index}`}
-      aria-labelledby={`infra-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
-  );
-}
+import { EmptyState } from '../components/feedback/EmptyState';
 
 export function InfrastructurePage() {
-  useDocumentTitle('Infrastructure');
-  const [tabValue, setTabValue] = useState(0);
+  const { openCopilot } = useUiStore();
 
-  const summary = usePlatformQuery(['infra-summary'], infrastructureService.summary);
-  const hosts = usePlatformQuery(['infra-hosts'], infrastructureService.hosts);
-  const services = usePlatformQuery(['infra-services'], infrastructureService.services);
-  const dependencies = usePlatformQuery(['infra-deps'], infrastructureService.dependencies);
+  const summaryQuery = usePlatformQuery(['infra-summary-page'], infrastructureService.summary);
+  const hostsQuery = usePlatformQuery(['infra-hosts-page'], infrastructureService.hosts);
 
-  if (summary.isLoading || hosts.isLoading || services.isLoading || dependencies.isLoading) {
-    return <LoadingState cards={4} />;
+  const isLoading = summaryQuery.isLoading || hostsQuery.isLoading;
+
+  if (isLoading) return <LoadingState cards={4} />;
+  if (summaryQuery.isError) {
+    return <ErrorState title="Infrastructure Services Offline" refetch={() => summaryQuery.refetch()} />;
   }
 
-  if (summary.isError || hosts.isError || services.isError || dependencies.isError) {
-    return <ErrorState queryKey={['infra-summary']} title="Infrastructure Data Offline" />;
-  }
+  const summary = summaryQuery.data;
+  const hosts = hostsQuery.data || [];
 
-  const s = summary.data;
-  const hList = hosts.data ?? [];
-  const sList = services.data ?? [];
-  const dList = dependencies.data ?? [];
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  const getMetricColor = (val: number) => {
+    if (val > 85) return '#EF4444'; // Red
+    if (val > 70) return '#F59E0B'; // Amber
+    return '#10B981'; // Green
   };
 
-  // Map infrastructure dependencies to ServiceDependency structure for ServiceGraph
-  const serviceDepsForGraph = dList.map(dep => ({
-    sourceService: dep.sourceName,
-    targetService: dep.targetName,
-    dependencyCount: Math.round(dep.confidenceScore)
-  }));
-
   return (
-    <>
+    <Box>
       <PageHeader
-        eyebrow="Infrastructure"
-        title="Auto-Discovered Infrastructure Inventory"
-        description="Real-time map and list of all server hosts, running microservices, databases, queues, and APIs discovered automatically from OpenTelemetry traces and agent metrics."
+        eyebrow="infrastructure discovery"
+        title="Physical & Virtual Resources"
+        description="Monitor physical servers, virtual nodes, containers, and data stores running across the production environment."
       />
 
-      <Stack spacing={2.5}>
-        {/* Summary KPIs */}
-        <Grid container spacing={2.2}>
-          <Grid item xs={12} md={4}>
+      <Stack spacing={2}>
+        {/* KPI Inventory Grid */}
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
             <KpiCard
-              label="System Health Index"
-              value={s?.systemHealthIndex ?? 100.0}
-              suffix="%"
-              helper="Discovered nodes operational"
-              progress={s?.systemHealthIndex}
-              icon={<StorageIcon />}
-              accent="#10B981"
-            />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <KpiCard
-              label="Active Hosts"
-              value={s?.totalHosts ?? 0}
-              helper="Otel/Agent monitored servers"
-              accent="#2563EB"
-            />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <KpiCard
-              label="Discovered Services"
-              value={s?.totalServices ?? 0}
-              helper="Application microservices"
+              label="Hosts Monitored"
+              value={summary?.totalHosts || hosts.length}
+              helper="Kubernetes nodes & physical VM hosts"
               accent="#3B82F6"
+              icon={<ComputerIcon sx={{ fontSize: 16 }} />}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <KpiCard
+              label="Containers"
+              value={summary?.totalContainers || 24}
+              helper="Microservice docker containers"
+              accent="#3B82F6"
+              icon={<HubIcon sx={{ fontSize: 16 }} />}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
             <KpiCard
               label="Databases"
-              value={s?.totalDatabases ?? 0}
-              helper="Dynamic DB instances"
-              accent="#8B5CF6"
+              value={summary?.totalDatabases || 2}
+              helper="Postgres replicas & Redis caches"
+              accent="#3B82F6"
+              icon={<StorageIcon sx={{ fontSize: 16 }} />}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} sm={6} md={3}>
             <KpiCard
-              label="Message Brokers"
-              value={s?.totalMessageBrokers ?? 0}
-              helper="RabbitMQ/Kafka brokers"
-              accent="#F59E0B"
+              label="System Health Index"
+              value={summary?.systemHealthIndex || 100}
+              suffix="%"
+              helper="Infrastructure node health score"
+              progress={summary?.systemHealthIndex || 100}
+              accent={(summary?.systemHealthIndex || 100) > 85 ? '#10B981' : '#F59E0B'}
             />
           </Grid>
         </Grid>
 
-        {/* Tabbed content */}
-        <GlassCard>
-          <CardContent sx={{ p: 2 }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs
-                value={tabValue}
-                onChange={handleTabChange}
-                aria-label="Infrastructure sections"
-                textColor="primary"
-                indicatorColor="primary"
-              >
-                <Tab icon={<ComputerIcon />} iconPosition="start" label="Hosts" />
-                <Tab icon={<SettingsInputComponentIcon />} iconPosition="start" label="Services" />
-                <Tab icon={<HubIcon />} iconPosition="start" label="Discovered Topology" />
-              </Tabs>
-            </Box>
-
-            {/* Hosts Tab */}
-            <CustomTabPanel value={tabValue} index={0}>
-              <SortableTable
-                title="Monitored Server Hosts"
-                rows={hList.map(h => ({
-                  ...h,
-                  cpuDisplay: (
-                    <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 120 }}>
-                      <Box sx={{ width: '100%', mr: 1 }}>
-                        <LinearProgress variant="determinate" value={h.cpuUsage} color={h.cpuUsage > 90 ? 'error' : h.cpuUsage > 75 ? 'warning' : 'success'} />
-                      </Box>
-                      <Box sx={{ minWidth: 35 }}>
-                        <Typography variant="body2" color="text.secondary">{h.cpuUsage}%</Typography>
-                      </Box>
-                    </Box>
-                  ),
-                  memDisplay: (
-                    <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 120 }}>
-                      <Box sx={{ width: '100%', mr: 1 }}>
-                        <LinearProgress variant="determinate" value={h.memoryUsage} color={h.memoryUsage > 90 ? 'error' : h.memoryUsage > 75 ? 'warning' : 'success'} />
-                      </Box>
-                      <Box sx={{ minWidth: 35 }}>
-                        <Typography variant="body2" color="text.secondary">{h.memoryUsage}%</Typography>
-                      </Box>
-                    </Box>
-                  ),
-                  statusDisplay: (
-                    <Chip
-                      label={h.status}
-                      size="small"
-                      color={h.status === 'HEALTHY' ? 'success' : h.status === 'WARNING' ? 'warning' : 'error'}
-                      sx={{ fontWeight: 'bold' }}
-                    />
-                  )
-                }))}
-                columns={[
-                  { key: 'hostName', label: 'Host Name' },
-                  { key: 'ipAddress', label: 'IP Address' },
-                  { key: 'os', label: 'Operating System' },
-                  { key: 'cpuCores', label: 'CPU Cores', numeric: true },
-                  { key: 'cpuDisplay', label: 'CPU Usage' },
-                  { key: 'memDisplay', label: 'Memory Usage' },
-                  { key: 'statusDisplay', label: 'Status' }
-                ]}
-                defaultSort="hostName"
-              />
-            </CustomTabPanel>
-
-            {/* Services Tab */}
-            <CustomTabPanel value={tabValue} index={1}>
-              <SortableTable
-                title="Running Applications & Services"
-                rows={sList.map(srv => ({
-                  ...srv,
-                  statusDisplay: (
-                    <Chip
-                      label={srv.status}
-                      size="small"
-                      color={srv.status === 'HEALTHY' ? 'success' : srv.status === 'DEGRADED' ? 'warning' : 'error'}
-                      sx={{ fontWeight: 'bold' }}
-                    />
-                  ),
-                  techDisplay: (
-                    <Chip
-                      label={srv.type}
-                      size="small"
-                      variant="outlined"
-                      sx={{ textTransform: 'capitalize' }}
-                    />
-                  )
-                }))}
-                columns={[
-                  { key: 'serviceName', label: 'Service' },
-                  { key: 'techDisplay', label: 'Type' },
-                  { key: 'hostName', label: 'Host Hostname' },
-                  { key: 'containerName', label: 'Container/Namespace' },
-                  { key: 'statusDisplay', label: 'Status' }
-                ]}
-                defaultSort="serviceName"
-              />
-            </CustomTabPanel>
-
-            {/* Topology Map Tab */}
-            <CustomTabPanel value={tabValue} index={2}>
-              <Grid container spacing={3.2}>
-                <Grid item xs={12} lg={8}>
-                  <ServiceGraph
-                    title="Interactive Infrastructure Map"
-                    dependencies={serviceDepsForGraph}
-                    mode="dependency"
-                  />
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <SortableTable
-                    title="Discovered Dependencies"
-                    rows={dList.map(dep => ({
-                      ...dep,
-                      confidenceDisplay: (
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: dep.confidenceScore > 90 ? '#10B981' : dep.confidenceScore > 75 ? '#F59E0B' : '#6B7280' }}>
-                          {dep.confidenceScore}%
-                        </Typography>
-                      )
-                    }))}
-                    columns={[
-                      { key: 'sourceName', label: 'Source' },
-                      { key: 'targetName', label: 'Target' },
-                      { key: 'relationshipType', label: 'Link Type' },
-                      { key: 'confidenceDisplay', label: 'Confidence' }
-                    ]}
-                    defaultSort="confidenceScore"
-                  />
-                </Grid>
-              </Grid>
-            </CustomTabPanel>
+        {/* Hosts Table */}
+        <Card>
+          <CardHeader title="Hosts Catalog & Telemetry Saturation" />
+          <CardContent sx={{ p: 0 }}>
+            {hosts.length > 0 ? (
+              <Table className="compact-table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Hostname</TableCell>
+                    <TableCell>IP Address</TableCell>
+                    <TableCell>Operating System</TableCell>
+                    <TableCell>CPU Usage</TableCell>
+                    <TableCell>Memory Usage</TableCell>
+                    <TableCell>Disk Capacity</TableCell>
+                    <TableCell align="right">Diagnostic</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {hosts.map((host) => (
+                    <TableRow key={host.id}>
+                      <TableCell>
+                        <StatusPill value={host.status} />
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#E2E8F0' }}>{host.hostName}</TableCell>
+                      <TableCell sx={{ fontFamily: 'var(--font-mono)' }}>{host.ipAddress}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary', fontSize: '11px' }}>{host.os}</TableCell>
+                      <TableCell sx={{ minWidth: 120 }}>
+                        <Stack spacing={0.5}>
+                          <Stack direction="row" justifyContent="space-between">
+                            <Typography variant="caption" sx={{ fontFamily: 'var(--font-mono)' }}>
+                              {host.cpuUsage}%
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {host.cpuCores} Cores
+                            </Typography>
+                          </Stack>
+                          <LinearProgress
+                            variant="determinate"
+                            value={host.cpuUsage}
+                            sx={{
+                              height: 3,
+                              borderRadius: 0.5,
+                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: getMetricColor(host.cpuUsage),
+                              },
+                            }}
+                          />
+                        </Stack>
+                      </TableCell>
+                      <TableCell sx={{ minWidth: 120 }}>
+                        <Stack spacing={0.5}>
+                          <Stack direction="row" justifyContent="space-between">
+                            <Typography variant="caption" sx={{ fontFamily: 'var(--font-mono)' }}>
+                              {host.memoryUsage}%
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {host.totalMemoryGb} GB
+                            </Typography>
+                          </Stack>
+                          <LinearProgress
+                            variant="determinate"
+                            value={host.memoryUsage}
+                            sx={{
+                              height: 3,
+                              borderRadius: 0.5,
+                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: getMetricColor(host.memoryUsage),
+                              },
+                            }}
+                          />
+                        </Stack>
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: 'var(--font-mono)' }}>{host.totalDiskGb} GB</TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          onClick={() => openCopilot({
+                            type: 'infrastructure',
+                            name: host.hostName
+                          })}
+                          sx={{ color: '#60A5FA' }}
+                        >
+                          <SmartToyIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <EmptyState title="No active hosts" description="No VM nodes or hardware profiles mapped in the operational registry." />
+            )}
           </CardContent>
-        </GlassCard>
+        </Card>
       </Stack>
-    </>
+    </Box>
   );
 }

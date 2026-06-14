@@ -1,13 +1,3 @@
-/**
- * platformServices.ts
- *
- * Single source of truth for all backend API calls.
- * Uses getBackend<T> — no mock fallbacks.
- * On error, throws so React Query surfaces isError and components show ErrorState.
- *
- * Endpoint reference: see src/api/endpoints.ts
- * Type reference: see src/types/backend.ts
- */
 import { endpoints } from '../api/endpoints';
 import { getBackend, postBackend } from './base';
 import type {

@@ -1,41 +1,38 @@
-import { Box, Chip, Stack, Typography } from '@mui/material';
-import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import React from 'react';
+import { Box, Typography, Stack } from '@mui/material';
 
-export function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
+interface PageHeaderProps {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}
+
+export function PageHeader({ eyebrow, title, description, action }: PageHeaderProps) {
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-      <Stack direction={{ xs: 'column', lg: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', lg: 'center' }} gap={2} sx={{ mb: 3 }}>
+    <Box sx={{ mb: 3 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
         <Box>
-          <Chip
-            label={eyebrow}
-            size="small"
-            sx={{
-              mb: 1.2,
-              fontWeight: 600,
-              letterSpacing: '.05em',
-              bgcolor: '#DBEAFE',
-              color: '#2563EB',
-              border: 'none',
-              fontSize: 11
-            }}
-          />
-          <Typography
-            variant="h3"
-            sx={{
-              fontWeight: 700,
-              letterSpacing: '-.03em',
-              color: 'text.primary'
-            }}
-          >
+          {eyebrow && (
+            <Typography
+              variant="overline"
+              color="primary"
+              sx={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', display: 'block', mb: 0.25 }}
+            >
+              {eyebrow}
+            </Typography>
+          )}
+          <Typography variant="h1" sx={{ color: '#F1F5F9', mb: 0.5 }}>
             {title}
           </Typography>
-          <Typography color="text.secondary" sx={{ maxWidth: 920, mt: 1, fontSize: 14 }}>
-            {description}
-          </Typography>
+          {description && (
+            <Typography variant="body2" color="text.secondary">
+              {description}
+            </Typography>
+          )}
         </Box>
-        {action}
+        {action && <Box sx={{ flexShrink: 0 }}>{action}</Box>}
       </Stack>
-    </motion.div>
+    </Box>
   );
 }
