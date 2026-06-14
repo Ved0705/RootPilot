@@ -21,25 +21,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem('user');
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = (token: string, username: string, role: string) => {
-    localStorage.setItem('token', token);
+  const login = (newToken: string, username: string, role: string) => {
+    localStorage.setItem('token', newToken);
     const sessionUser = { username, role };
     localStorage.setItem('user', JSON.stringify(sessionUser));
-    setToken(token);
+    setToken(newToken);
     setUser(sessionUser);
   };
+
+  // Check active token validity with the backend on startup
+  useEffect(() => {
+    const verifySession = async () => {
+      const activeToken = localStorage.getItem('token');
+      if (!activeToken) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/auth/session`, {
+          headers: { 'Authorization': `Bearer ${activeToken}` }
+        });
+        if (response.ok) {
+          const sessionData = await response.json();
+          setUser({ username: sessionData.username, role: sessionData.role });
+        } else {
+          logout();
+        }
+      } catch (e) {
+        // network failure, keep local state for now but don't force logout
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+          try {
+            setUser(JSON.parse(savedUser));
+          } catch (_) {}
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    verifySession();
+  }, []);
 
   const logout = () => {
     localStorage.removeItem('token');

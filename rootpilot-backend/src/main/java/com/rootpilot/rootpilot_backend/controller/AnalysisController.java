@@ -22,13 +22,15 @@ public class AnalysisController {
     private final AutomationReadinessService automationReadinessService;
     private final OrchestratorService orchestratorService;
     private final AIOpsCommandCenterService aiOpsCommandCenterService;
+    private final AnomalyDetectionService anomalyDetectionService;
 
     public AnalysisController(
             IncidentService incidentService,
             ResilienceIntelligenceService resilienceIntelligenceService,
             AutomationReadinessService automationReadinessService,
             OrchestratorService orchestratorService,
-            AIOpsCommandCenterService aiOpsCommandCenterService) {
+            AIOpsCommandCenterService aiOpsCommandCenterService,
+            AnomalyDetectionService anomalyDetectionService) {
 
         this.incidentService = incidentService;
         this.resilienceIntelligenceService =
@@ -37,6 +39,7 @@ public class AnalysisController {
                 automationReadinessService;
         this.orchestratorService = orchestratorService;
         this.aiOpsCommandCenterService = aiOpsCommandCenterService;
+        this.anomalyDetectionService = anomalyDetectionService;
     }
 
     @GetMapping("/exceptions")
@@ -258,9 +261,9 @@ public class AnalysisController {
         return incidentService.getPredictionExecutiveSummary();
     }
     @GetMapping("/anomalies")
-    public List<AnomalyDetection> getAnomalies() {
+    public List<com.rootpilot.rootpilot_backend.entity.AnomalyEvent> getAnomalies() {
 
-        return incidentService.getAnomalies();
+        return anomalyDetectionService.getAllAnomalies();
     }
     @GetMapping("/top-anomaly")
     public String getTopAnomalyService() {

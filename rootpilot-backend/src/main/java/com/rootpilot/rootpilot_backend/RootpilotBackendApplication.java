@@ -8,6 +8,7 @@ public class RootpilotBackendApplication {
 
 	public static void main(String[] args) {
 
+		java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
 		System.out.println("TIMEZONE = " +
 				java.util.TimeZone.getDefault().getID());
 

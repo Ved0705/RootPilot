@@ -5,6 +5,7 @@ import com.rootpilot.rootpilot_backend.config.RabbitMQConfig;
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.event.FailureEvent;
 import com.rootpilot.rootpilot_backend.service.IncidentService;
+import com.rootpilot.rootpilot_backend.service.AnomalyDetectionService;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -13,13 +14,16 @@ import org.springframework.stereotype.Component;
 public class FailureEventConsumer {
 
     private final IncidentService incidentService;
+    private final AnomalyDetectionService anomalyDetectionService;
     private final ObjectMapper objectMapper;
 
     public FailureEventConsumer(
             IncidentService incidentService,
+            AnomalyDetectionService anomalyDetectionService,
             ObjectMapper objectMapper) {
 
         this.incidentService = incidentService;
+        this.anomalyDetectionService = anomalyDetectionService;
         this.objectMapper = objectMapper;
     }
 
@@ -65,6 +69,23 @@ public class FailureEventConsumer {
 
             System.out.println(
                     "Incident saved successfully");
+
+            // Hardening: Route performance metrics directly to the Anomaly Engine
+            if (event.getLatency() != null) {
+                anomalyDetectionService.processMetric(
+                        event.getServiceName(),
+                        event.getLatency().doubleValue(),
+                        "latency"
+                );
+            }
+            if (event.getStatusCode() != null) {
+                double errorRate = event.getStatusCode() >= 500 ? 100.0 : 0.0;
+                anomalyDetectionService.processMetric(
+                        event.getServiceName(),
+                        errorRate,
+                        "errorRate"
+                );
+            }
 
         } catch (Exception e) {
 

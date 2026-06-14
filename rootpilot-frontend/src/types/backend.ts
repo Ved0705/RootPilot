@@ -656,7 +656,11 @@ export interface CopilotActionLink {
 
 export interface CopilotResponse {
   answer: string;
-  confidence: 'DATA_BACKED' | 'PARTIAL' | 'GUIDE_ONLY';
-  dataSources: string[];
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string;
+  confidenceScore: number;
+  affectedServices: string[];
+  recommendations: string[];
   actionLinks: CopilotActionLink[];
+  dataSources: string[];
 }
+
