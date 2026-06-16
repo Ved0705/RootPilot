@@ -47,6 +47,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    System.out.println("ROLE FROM JWT = " + role);
+
+                    System.out.println(
+                            "AUTHORITY CREATED = ROLE_" + role.toUpperCase()
+                    );
+
+                    System.out.println(
+                            "AUTHORITIES = " + authToken.getAuthorities()
+                    );
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
