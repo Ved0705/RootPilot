@@ -8,9 +8,11 @@ import com.rootpilot.rootpilot_backend.service.IncidentService;
 import com.rootpilot.rootpilot_backend.service.AnomalyDetectionService;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(name = "rabbitmq.enabled", havingValue = "true", matchIfMissing = false)
 public class FailureEventConsumer {
 
     private final IncidentService incidentService;
