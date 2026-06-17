@@ -18,12 +18,11 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
-    connection-timeout: 3000
+    connection-timeout: 2000
 
-  rabbit:
-    listener:
-      simple:
-        auto-startup: ${RABBITMQ_ENABLED:false}
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
 
   data:
     redis:
@@ -32,4 +31,6 @@ spring:
       timeout: 2000
 
 server:
-  port: 8080
+  port: 8080
+
+spring.jmx.enabled: false
