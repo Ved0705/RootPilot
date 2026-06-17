@@ -4,7 +4,7 @@ import com.rootpilot.rootpilot_backend.dto.AIOpsDashboard;
 import com.rootpilot.rootpilot_backend.dto.AIOpsExecutiveSummary;
 import com.rootpilot.rootpilot_backend.dto.AIOpsSummary;
 import com.rootpilot.rootpilot_backend.dto.OperationalPriority;
-import com.rootpilot.rootpilot_backend.repository.IncidentRepository;
+import com.rootpilot.rootpilot_backend.config.SafeRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,28 +14,38 @@ import java.util.Set;
 @Service
 public class AIOpsCommandCenterService {
 
-    private final IncidentRepository incidentRepository;
+    private final SafeRedisTemplate redisTemplate;
 
     public AIOpsCommandCenterService(
-            IncidentRepository incidentRepository) {
+            SafeRedisTemplate redisTemplate) {
 
-        this.incidentRepository = incidentRepository;
+        this.redisTemplate = redisTemplate;
     }
 
     public List<OperationalPriority> getOperationalPriorities() {
 
         List<OperationalPriority> priorities = new ArrayList<>();
 
-        List<Object[]> serviceCounts = incidentRepository.countIncidentsByService();
+        Set<String> serviceKeys =
+                redisTemplate.keys("service:*");
 
-        if (serviceCounts == null || serviceCounts.isEmpty()) {
+        if (serviceKeys == null || serviceKeys.isEmpty()) {
             return priorities;
         }
 
-        for (Object[] row : serviceCounts) {
+        for (String key : serviceKeys) {
 
-            String serviceName = (String) row[0];
-            long incidentCount = ((Number) row[1]).longValue();
+            String serviceName =
+                    key.replace("service:", "");
+
+            Object value =
+                    redisTemplate.opsForValue().get(key);
+
+            long incidentCount = 0;
+
+            if (value instanceof Number number) {
+                incidentCount = number.longValue();
+            }
 
             String priorityLevel;
             String recommendedAction;

@@ -1211,35 +1211,109 @@ public class IncidentService {
     }
     public DashboardSummary getDashboardSummary() {
 
-        long totalIncidents = incidentRepository.count();
+        Object countObject =
+                redisTemplate.opsForValue()
+                        .get("liveIncidentCount");
+
+        long totalIncidents = 0;
+
+        if (countObject instanceof Number number) {
+            totalIncidents = number.longValue();
+        }
 
         String topService = "N/A";
-        List<Object[]> serviceCounts = incidentRepository.countIncidentsByService();
-        if (serviceCounts != null && !serviceCounts.isEmpty()) {
-            Object[] maxSvc = serviceCounts.stream()
-                .max((a, b) -> Long.compare(((Number) a[1]).longValue(), ((Number) b[1]).longValue()))
-                .orElse(null);
-            if (maxSvc != null) topService = (String) maxSvc[0];
+        long maxServiceCount = 0;
+
+        Set<String> serviceKeys =
+                redisTemplate.keys("service:*");
+
+        if (serviceKeys != null) {
+
+            for (String key : serviceKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue()
+                                .get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxServiceCount) {
+
+                    maxServiceCount = count;
+
+                    topService =
+                            key.replace("service:", "");
+                }
+            }
         }
 
         String topException = "N/A";
-        List<Object[]> exceptionCounts = incidentRepository.countIncidentsByException();
-        if (exceptionCounts != null && !exceptionCounts.isEmpty()) {
-            Object[] maxEx = exceptionCounts.stream()
-                .max((a, b) -> Long.compare(((Number) a[1]).longValue(), ((Number) b[1]).longValue()))
-                .orElse(null);
-            if (maxEx != null) topException = (String) maxEx[0];
-        }
+        long maxExceptionCount = 0;
+        int alertsCount =
+                generateAlerts().size();
 
+        int scoredAlertsCount =
+                generateScoredAlerts().size();
         String topCorrelation = "N/A";
-        List<Object[]> corrCounts = incidentRepository.countServiceExceptionCorrelations();
-        if (corrCounts != null && !corrCounts.isEmpty()) {
-            Object[] maxCorr = corrCounts.get(0);
-            if (maxCorr != null) topCorrelation = maxCorr[0] + " with " + maxCorr[1];
-        }
 
-        int alertsCount = generateAlerts().size();
-        int scoredAlertsCount = generateScoredAlerts().size();
+        Set<String> correlationKeys =
+                redisTemplate.keys("correlation:*");
+
+        long maxCorrelationCount = 0;
+
+        if (correlationKeys != null) {
+
+            for (String key : correlationKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue().get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxCorrelationCount) {
+
+                    maxCorrelationCount = count;
+
+                    topCorrelation =
+                            key.replace("correlation:", "")
+                                    .replace("|", " with ");
+                }
+            }
+        }
+        Set<String> exceptionKeys =
+                redisTemplate.keys("exception:*");
+
+        if (exceptionKeys != null) {
+
+            for (String key : exceptionKeys) {
+
+                Object value =
+                        redisTemplate.opsForValue()
+                                .get(key);
+
+                long count = 0;
+
+                if (value instanceof Number number) {
+                    count = number.longValue();
+                }
+
+                if (count > maxExceptionCount) {
+
+                    maxExceptionCount = count;
+
+                    topException =
+                            key.replace("exception:", "");
+                }
+            }
+        }
 
 
         String severity = "LOW";
