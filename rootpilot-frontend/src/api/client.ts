@@ -2,6 +2,11 @@ import axios, { type AxiosError } from 'axios';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
+// ── Deployment diagnostic — safe to keep, remove after confirming prod env var ──
+console.info(
+  `[RootPilot] API_BASE_URL resolved to: "${API_BASE_URL}" | env: ${import.meta.env.MODE}`,
+);
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10_000,
