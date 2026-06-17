@@ -4,7 +4,7 @@ import com.rootpilot.rootpilot_backend.entity.AnomalyEvent;
 import com.rootpilot.rootpilot_backend.entity.MetricData;
 import com.rootpilot.rootpilot_backend.repository.AnomalyEventRepository;
 import com.rootpilot.rootpilot_backend.repository.MetricDataRepository;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.rootpilot.rootpilot_backend.config.SafeRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,14 +15,14 @@ public class AnomalyDetectionService {
 
     private final MetricDataRepository metricDataRepository;
     private final AnomalyEventRepository anomalyEventRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final SafeRedisTemplate redisTemplate;
 
     // Rolling window size for baseline calculations
     private static final int BASELINE_WINDOW = 30;
 
     public AnomalyDetectionService(MetricDataRepository metricDataRepository,
                                    AnomalyEventRepository anomalyEventRepository,
-                                   RedisTemplate<String, Object> redisTemplate) {
+                                   SafeRedisTemplate redisTemplate) {
         this.metricDataRepository = metricDataRepository;
         this.anomalyEventRepository = anomalyEventRepository;
         this.redisTemplate = redisTemplate;

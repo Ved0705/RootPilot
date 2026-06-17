@@ -8,7 +8,7 @@ import java.time.Duration;
 
 import java.util.ArrayList;
 import com.rootpilot.rootpilot_backend.dto.*;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.rootpilot.rootpilot_backend.config.SafeRedisTemplate;
 import com.rootpilot.rootpilot_backend.entity.Incident;
 import com.rootpilot.rootpilot_backend.repository.IncidentRepository;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ public class IncidentService {
 
     public IncidentService(
             IncidentRepository incidentRepository,
-            RedisTemplate<String, Object> redisTemplate) {
+            SafeRedisTemplate redisTemplate) {
 
         this.incidentRepository = incidentRepository;
         this.redisTemplate = redisTemplate;
@@ -798,7 +798,7 @@ public class IncidentService {
 
         return result;
     }
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final SafeRedisTemplate redisTemplate;
     public Map<String, Long> getLiveIncidentCount() {
 
         Object count =
