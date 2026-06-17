@@ -73,6 +73,16 @@ public class SafeRedisTemplate {
             try {
                 return delegate.opsForValue().get(key);
             } catch (Exception e) {
+                if (e.getClass().getSimpleName().contains("SerializationException")) {
+                    try {
+                        byte[] rawValue = delegate.execute((org.springframework.data.redis.connection.RedisConnection connection) -> 
+                            connection.stringCommands().get(key.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                        if (rawValue != null) {
+                            return Long.parseLong(new String(rawValue, java.nio.charset.StandardCharsets.UTF_8));
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
                 markUnavailable(e);
                 return null;
             }
