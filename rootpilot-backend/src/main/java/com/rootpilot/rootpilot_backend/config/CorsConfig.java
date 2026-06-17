@@ -17,9 +17,11 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
 
                 registry.addMapping("/**")
-                        .allowedOrigins(
+                        .allowedOriginPatterns(
                                 "http://localhost:3000",
-                                "http://localhost:5173"
+                                "http://localhost:5173",
+                                "https://rootpilot-chi.vercel.app",
+                                "https://*.vercel.app"          // covers all preview deployments
                         )
                         .allowedMethods(
                                 "GET", "POST", "PUT",
