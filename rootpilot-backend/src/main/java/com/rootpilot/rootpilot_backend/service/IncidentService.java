@@ -1220,6 +1220,34 @@ public class IncidentService {
         if (countObject instanceof Number number) {
             totalIncidents = number.longValue();
         }
+        
+        if (totalIncidents == 0) {
+            totalIncidents = incidentRepository.count();
+            if (totalIncidents > 0) {
+                redisTemplate.opsForValue().set("liveIncidentCount", String.valueOf(totalIncidents));
+                
+                List<Object[]> byService = incidentRepository.countIncidentsByService();
+                if (byService != null) {
+                    for (Object[] row : byService) {
+                        redisTemplate.opsForValue().set("service:" + row[0], String.valueOf(row[1]));
+                    }
+                }
+                
+                List<Object[]> byException = incidentRepository.countIncidentsByException();
+                if (byException != null) {
+                    for (Object[] row : byException) {
+                        redisTemplate.opsForValue().set("exception:" + row[0], String.valueOf(row[1]));
+                    }
+                }
+                
+                List<Object[]> byCorrelation = incidentRepository.countServiceExceptionCorrelations();
+                if (byCorrelation != null) {
+                    for (Object[] row : byCorrelation) {
+                        redisTemplate.opsForValue().set("correlation:" + row[0] + "|" + row[1], String.valueOf(row[2]));
+                    }
+                }
+            }
+        }
 
         String topService = "N/A";
         long maxServiceCount = 0;
@@ -1314,7 +1342,6 @@ public class IncidentService {
                 }
             }
         }
-
 
         String severity = "LOW";
 
