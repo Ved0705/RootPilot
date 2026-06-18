@@ -1541,41 +1541,29 @@ public class IncidentService {
         List<ServiceDependency> dependencies =
                 new ArrayList<>();
 
-        for (int i = 0; i < incidents.size() - 1; i++) {
+        for (int i = 0; i < incidents.size(); i++) {
 
-            Incident current =
-                    incidents.get(i);
+            Incident current = incidents.get(i);
+            
+            for (int j = i + 1; j < incidents.size(); j++) {
+                Incident next = incidents.get(j);
 
-            Incident next =
-                    incidents.get(i + 1);
+                if (current.getServiceName() == null || next.getServiceName() == null) {
+                    continue;
+                }
 
-            if (current.getServiceName() == null
-                    || next.getServiceName() == null) {
-                continue;
-            }
+                if (current.getServiceName().equals(next.getServiceName())) {
+                    continue;
+                }
 
-            if (current.getServiceName()
-                    .equals(next.getServiceName())) {
-                continue;
-            }
+                Duration duration = Duration.between(current.getTimestamp(), next.getTimestamp());
+                long minutes = duration.toMinutes();
 
-            Duration duration =
-                    Duration.between(
-                            current.getTimestamp(),
-                            next.getTimestamp());
-
-            long minutes =
-                    duration.toMinutes();
-
-            if (minutes <= 5) {
-
-                dependencies.add(
-                        new ServiceDependency(
-                                current.getServiceName(),
-                                next.getServiceName(),
-                                1
-                        )
-                );
+                if (minutes <= 5) {
+                    dependencies.add(new ServiceDependency(current.getServiceName(), next.getServiceName(), 1));
+                } else {
+                    break; // List is sorted by timestamp, so all subsequent incidents will also be > 5 minutes apart
+                }
             }
         }
 
