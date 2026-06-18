@@ -1,6 +1,11 @@
-# RootPilot Frontend — Observability & SRE Dashboard
+# 🖥️ RootPilot Frontend
 
-RootPilot Frontend is a premium Single Page Application (SPA) designed to act as an SRE CommandCenter, Incident Response interface, and RCA (Root Cause Analysis) workbench. It communicates with the Spring Boot backend to visualize real-time telemetry metrics.
+[![Vite](https://img.shields.io/badge/Vite-6.x-blue?style=flat-square&logo=vite)](https://vite.dev/)
+[![React 18](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Material-UI](https://img.shields.io/badge/MUI-5-blue?style=flat-square&logo=mui)](https://mui.com/)
+
+A premium, high-density Single Page Application (SPA) designed to act as an SRE CommandCenter, Incident Response interface, and RCA (Root Cause Analysis) workbench. It communicates with the Spring Boot backend to visualize real-time telemetry metrics.
 
 ---
 
@@ -17,7 +22,7 @@ RootPilot Frontend is a premium Single Page Application (SPA) designed to act as
 
 ## 🛠️ Technology Stack
 
-* **Build Tool**: Vite (extremely fast development and bundling)
+* **Build Tool & Bundler**: Vite
 * **Framework**: React 18 & TypeScript
 * **State Management**: Zustand
 * **Query Caching**: TanStack Query (React Query)
@@ -26,32 +31,30 @@ RootPilot Frontend is a premium Single Page Application (SPA) designed to act as
 
 ---
 
-## 🔧 Installation & Setup
+## 🔧 Installation & Running
 
-### 1. Install Dependencies
-Navigate to the frontend directory and install the packages:
+### 1. Install Packages
+From the `rootpilot-frontend` directory, run:
 ```bash
 npm install
 ```
 
 ### 2. Configure Environment Variables
-Create a `.env` file in the root of the project (if it doesn't already exist):
+Create or edit `.env` in the root of the frontend folder:
 ```env
-# URL target of the Spring Boot backend server
 VITE_API_BASE_URL=http://localhost:3000
 ```
-*(Note: Set the backend URL to proxy requests through Vite's dev server to localhost:8080 to prevent CORS issues).*
+*Note: Vite dev server automatically proxies endpoints from `/api`, `/incidents`, and `/analysis` to http://localhost:8080 to prevent CORS issues.*
 
 ### 3. Launch Development Server
-Start the frontend dev environment:
 ```bash
 npm run dev
 ```
-The application will launch on your local IP or localhost: **http://localhost:3000**.
+The application will launch on your local host: **http://localhost:3000**.
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Directory Structure
 
 * `src/api` — Base HTTP client (Axios configuration, endpoints mapping)
 * `src/components` — Shared controls (Loading/Error/Empty states, Status pills, Copilot drawer)
