@@ -4,7 +4,7 @@ import com.rootpilot.rootpilot_backend.dto.AutomationReadiness;
 import com.rootpilot.rootpilot_backend.dto.AutomationReadinessDashboard;
 import com.rootpilot.rootpilot_backend.dto.AutomationReadinessExecutiveSummary;
 import com.rootpilot.rootpilot_backend.dto.AutomationReadinessSummary;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.rootpilot.rootpilot_backend.config.SafeRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,10 +14,10 @@ import java.util.Set;
 @Service
 public class AutomationReadinessService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final SafeRedisTemplate redisTemplate;
 
     public AutomationReadinessService(
-            RedisTemplate<String, Object> redisTemplate) {
+            SafeRedisTemplate redisTemplate) {
 
         this.redisTemplate = redisTemplate;
     }

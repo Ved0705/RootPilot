@@ -4,7 +4,7 @@ import com.rootpilot.rootpilot_backend.dto.AutonomousExecutionPlan;
 import com.rootpilot.rootpilot_backend.dto.OrchestratorDashboard;
 import com.rootpilot.rootpilot_backend.dto.OrchestratorExecutiveSummary;
 import com.rootpilot.rootpilot_backend.dto.OrchestratorSummary;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.rootpilot.rootpilot_backend.config.SafeRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,10 +14,10 @@ import java.util.Set;
 @Service
 public class OrchestratorService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final SafeRedisTemplate redisTemplate;
 
     public OrchestratorService(
-            RedisTemplate<String, Object> redisTemplate) {
+            SafeRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

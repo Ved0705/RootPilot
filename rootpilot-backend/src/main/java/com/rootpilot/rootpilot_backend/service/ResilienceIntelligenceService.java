@@ -1,7 +1,7 @@
 package com.rootpilot.rootpilot_backend.service;
 
 import com.rootpilot.rootpilot_backend.dto.*;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.rootpilot.rootpilot_backend.config.SafeRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,10 +11,10 @@ import java.util.Set;
 @Service
 public class ResilienceIntelligenceService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final SafeRedisTemplate redisTemplate;
 
     public ResilienceIntelligenceService(
-            RedisTemplate<String, Object> redisTemplate) {
+            SafeRedisTemplate redisTemplate) {
 
         this.redisTemplate = redisTemplate;
     }

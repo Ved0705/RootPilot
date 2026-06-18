@@ -4,7 +4,7 @@ import com.rootpilot.rootpilot_backend.dto.SelfHealingDashboard;
 import com.rootpilot.rootpilot_backend.dto.SelfHealingExecutiveSummary;
 import com.rootpilot.rootpilot_backend.dto.SelfHealingRecommendation;
 import com.rootpilot.rootpilot_backend.dto.SelfHealingSummary;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.rootpilot.rootpilot_backend.config.SafeRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -12,10 +12,10 @@ import java.util.*;
 @Service
 public class SelfHealingService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final SafeRedisTemplate redisTemplate;
 
     public SelfHealingService(
-            RedisTemplate<String, Object> redisTemplate) {
+            SafeRedisTemplate redisTemplate) {
 
         this.redisTemplate = redisTemplate;
     }
