@@ -89,6 +89,17 @@ cd monitored-service
 
 ---
 
+## 🌐 Cloud Deployment
+
+The production instances of the RootPilot platform are fully deployed and orchestrated in the cloud:
+
+- **Backend API**: Hosted on **Railway** ([rootpilot-production.up.railway.app](https://rootpilot-production.up.railway.app))
+- **Frontend Dashboard**: Hosted on **Vercel** ([rootpilot-ndjziw5nd-ved07022005-7332s-projects.vercel.app](https://rootpilot-ndjziw5nd-ved07022005-7332s-projects.vercel.app))
+- **Database (PostgreSQL)**: Hosted on **Neon Database**
+- **Cache (Redis) & Message Broker (RabbitMQ)**: Hosted as managed services on **Railway**
+
+---
+
 ## 🔒 Default Credentials
 Access the console dashboard using these default profiles (password: `rootpilot`):
 - **Administrator**: `admin`
