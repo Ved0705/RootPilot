@@ -285,7 +285,7 @@ export function CommandCenterPage() {
         {/* Hourly Trend & Forecasts */}
         <Grid container spacing={2}>
           {/* Trend Chart */}
-          <Grid item xs={12} md={7}>
+          <Grid item xs={12}>
             <Card sx={{ height: '100%' }}>
               <CardHeader title="24-Hour Incident Volume" />
               <CardContent sx={{ pt: 2 }}>
@@ -305,52 +305,6 @@ export function CommandCenterPage() {
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Forecasted Risk Models */}
-          <Grid item xs={12} md={5}>
-            <Card sx={{ height: '100%' }}>
-              <CardHeader title="AI Risk Failure Predictions" />
-              <CardContent sx={{ p: 0 }}>
-                {pred && pred.criticalServices > 0 ? (
-                  <Stack spacing={0} divider={<Divider />}>
-                    {((predictions.data as any)?.servicesAtRisk || [
-                      { serviceName: 'database-service', riskScore: 88, prediction: 'High disk writes and CPU thread lock risk' },
-                      { serviceName: 'auth-service', riskScore: 42, prediction: 'High memory load post deployment' }
-                    ]).slice(0, 3).map((item: any, idx: number) => (
-                      <Box key={idx} sx={{ p: 1.5 }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                          <Typography variant="body2" fontWeight={750} sx={{ color: '#E2E8F0' }}>
-                            {item.serviceName}
-                          </Typography>
-                          <Typography variant="caption" fontWeight={700} sx={{ color: getRiskColor(item.riskScore) }}>
-                            {item.riskScore}% Failure Prob.
-                          </Typography>
-                        </Stack>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', mb: 1 }}>
-                          {item.prediction}
-                        </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={item.riskScore}
-                          sx={{
-                            height: 3,
-                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            '& .MuiLinearProgress-bar': {
-                              backgroundColor: getRiskColor(item.riskScore),
-                            },
-                          }}
-                        />
-                      </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <Box sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">No failure risks predicted.</Typography>
-                  </Box>
-                )}
               </CardContent>
             </Card>
           </Grid>
