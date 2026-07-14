@@ -1,1 +1,0 @@
-web: java -Xmx300m -Xms128m -XX:+UseG1GC -jar target/*.jar --server.port=$PORT
